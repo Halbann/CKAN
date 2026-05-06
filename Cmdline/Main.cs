@@ -78,6 +78,9 @@ namespace CKAN.CmdLine
             // Very special case: macOS URL handler can only launch CKAN like `ckan "ckan://*"`.
             // It cannot include the gui mode, so we have to rearrange the arguments.
 
+            // todo: this doesn't actually make any sense because macOS can't use the gui mode anyway.
+            // Use once for testing via log and then rethink.
+
             // macOS: launched via URL handler as: CKAN "ckan://..."
             if (Platform.IsMac && args.Length == 1 && args[0].StartsWith("ckan://"))
             {
