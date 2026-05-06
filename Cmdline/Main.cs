@@ -8,6 +8,8 @@ using System.Net;
 using System.Diagnostics;
 using System.Linq;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.IO.Pipes;
 #if WINDOWS && NET5_0_OR_GREATER
 using System.Runtime.Versioning;
 #endif
@@ -19,6 +21,7 @@ using log4net.Core;
 using CKAN.Configuration;
 using CKAN.Versioning;
 using CKAN.Games;
+using CKAN.IO;
 
 namespace CKAN.CmdLine
 {
@@ -71,6 +74,57 @@ namespace CKAN.CmdLine
                 log.Info("Verbose logging enabled");
             }
             log.Info("CKAN started.");
+
+            // Very special case: macOS URL handler can only launch CKAN like `ckan "ckan://*"`.
+            // It cannot include the gui mode, so we have to rearrange the arguments.
+
+            // macOS: launched via URL handler as: CKAN "ckan://..."
+            if (Platform.IsMac && args.Length == 1 && args[0].StartsWith("ckan://"))
+            {
+                log.Info("macOS URL handler launch inferred. Forcing gui mode.");
+                args = new[] { "gui", args[0] };
+            }
+
+            // Special case: launching via a URL handler using the command "ckan gui ckan://*".
+            // We may be the only instance or there may be an instance already running.
+            // For this to be seamless we want to pipe the URL to the running process as quickly as possible,
+            // and therefore not actually load into GUI, despite this being a GUI concern.
+            // Q: Is this a bad idea?
+
+            string? ckanURL = null;
+            if (args.Length > 1 && args[0] == "gui" && (ckanURL = args.FirstOrDefault(s => s.StartsWith("ckan://"))) != null)
+            {
+                if (Platform.IsWindows)
+                {
+                    Util.HideConsoleWindow2();
+                    Util.HideConsoleWindow();
+                }
+                
+                log.Info("URL handler launch detected. Creating pipe...");
+                using var client = new NamedPipeClientStream(".", URLPipe.name, PipeDirection.Out);
+
+                try
+                {
+                    client.Connect(50); // milliseconds. arbitrary value.
+                    log.Info("Pipe connected, CKAN will send URL and exit.");
+
+                    using (var writer = new StreamWriter(client))
+                    {
+                        writer.AutoFlush = true;
+                        writer.WriteLine(ckanURL);
+                    }
+
+                    log.Info("URL written, exiting.");
+
+                    return 0;
+                }
+                catch (TimeoutException)
+                {
+                    // No server listening. This is the first instance.
+                    log.Info("Check for CKAN listener timed out. Proceeding as normal.");
+                }
+                catch (IOException) { }
+            }
 
             // Force-allow TLS 1.2 for HTTPS URLs, because GitHub requires it.
             // This is on by default in .NET 4.6, but not in 4.5.

@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
+using System.IO.Pipes;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Timer = System.Windows.Forms.Timer;
 #if NET5_0_OR_GREATER
@@ -39,6 +41,8 @@ namespace CKAN.GUI
         private readonly string? userAgent;
         private readonly AutoUpdate updater = new AutoUpdate();
         public bool Waiting => Wait.Busy;
+        private static CancellationTokenSource? pipeCts;
+        private static Task? pipeServerTask;
 
         // Stuff we set when the game instance changes
         public GUIConfiguration? configuration;
@@ -177,6 +181,10 @@ namespace CKAN.GUI
 
             // Disable the modinfo controls until a mod has been choosen. This has an effect if the modlist is empty.
             ActiveModInfo = null;
+
+            // Start the pipe to listen for ckan:// messages from CKAN instances started after this one. Q: Is this an okay place to do this?
+            log.Info("Starting pipe server.");
+            StartUrlPipeServer();
         }
 
         protected override void OnLoad(EventArgs e)
@@ -1004,7 +1012,7 @@ namespace CKAN.GUI
         }
 
         // This is used by Reinstall
-        private void ManageMods_StartChangeSet(List<ModChange> changeset, Dictionary<GUIMod, string> conflicts)
+        private void ManageMods_StartChangeSet(List<ModChange> changeset, Dictionary<GUIMod, string>? conflicts)
         {
             UpdateChangesDialog(changeset,
                                 conflicts?.ToDictionary(item => item.Key.Module,
@@ -1088,5 +1096,121 @@ namespace CKAN.GUI
             });
         }
 
+        // todo: move into IO.URLPipe
+        public void StartUrlPipeServer()
+        {
+            if (pipeServerTask != null)
+            {
+                return;
+            }
+
+            pipeCts = new CancellationTokenSource();
+
+            log.Debug("Starting server task");
+            pipeServerTask = Task.Run(async () =>
+            {
+                log.Debug("Server task started");
+                while (!pipeCts.IsCancellationRequested)
+                {
+                    log.Debug("Creating new NamedPipeServerStream");
+                    
+                    using var server = new NamedPipeServerStream(
+                        URLPipe.name,
+                        PipeDirection.In,
+                        1,
+                        PipeTransmissionMode.Byte, // Must use PipeTransmissionMode.Byte for compatibility on Unix.
+                        PipeOptions.Asynchronous);
+
+                    log.Debug("Waiting for connection...");
+                    await server.WaitForConnectionAsync(pipeCts.Token);
+
+                    log.Debug("Pipe connection received!");
+                    using var reader = new StreamReader(server);
+                    log.Debug("Reading...");
+                    var url = await reader.ReadLineAsync();
+
+                    log.Debug($"Read a URL: {url}");
+                    if (!string.IsNullOrWhiteSpace(url))
+                    {
+                        // todo: this is nested too deep.
+
+                        // todo: extract and use URL handling from GUI Main.
+                        // url is ['c', 'k', 'a', 'n', ':', '/', '/', .. ]
+                        var identifier = url[7..].TrimEnd('/');
+
+                        log.Debug($"Asking the UI thread to invoke focus for: {identifier}");
+                        // todo: Do we need to run on the UI thread in all cases? Probably.
+                        Util.Invoke(this, () =>
+                        {
+                            log.Debug($"UI thread is focusing on: {identifier}");
+                            ManageMods.FocusMod(identifier, true, true);
+                            if (CurrentInstance == null)
+                            {
+                                return;
+                            }
+
+                            log.Debug($"Trying to install {identifier}");
+                            var reg = RegistryManager.Instance(CurrentInstance, repoData).registry;
+                            var module = reg.LatestAvailable(identifier, CurrentInstance.StabilityToleranceConfig, CurrentInstance.VersionCriteria());
+                            if (module == null)
+                            {
+                                log.Error("Failed getting module.");
+                                return;
+                            }
+
+                            log.Debug("Making mod change and triggering install.");
+                            var config = ServiceLocator.Container.Resolve<IConfiguration>();
+                            var change = new ModChange(module, GUIModChangeType.Install, new SelectionReason.UserRequested(), config);
+
+                            // todo: add to existing changeset so that we can click many links before installing.
+
+                            var userChangeSet = new HashSet<ModChange> { change };
+                            var result = ModList.ComputeFullChangeSetFromUserChangeSet(reg, userChangeSet, config, CurrentInstance);
+
+                            var fullChangeSet = result.Item1;
+                            var conflicts = result.Item2;
+
+                            // todo: what should really happen in this case?
+                            if (conflicts.Count > 0)
+                            {
+                                log.Error($"Conflicts resolving install for {identifier}");
+                                return;
+                            }
+
+                            ManageMods_StartChangeSet(fullChangeSet.ToList(), null);
+
+                            // todo: pull focus to CKAN
+                        });
+                    }
+                }
+            });
+        }
+
+        // todo: test. 
+        public async Task StopUrlPipeServer()
+        {
+            if (pipeCts == null)
+            {
+                return;
+            }
+
+            pipeCts.Cancel();
+
+            try
+            {
+                using var client = new NamedPipeClientStream(".", URLPipe.name, PipeDirection.Out);
+                await client.ConnectAsync(50);
+            }
+            catch
+            { }
+
+            if (pipeServerTask != null)
+            {
+                await pipeServerTask;
+            }
+
+            pipeCts.Dispose();
+            pipeCts = null;
+        }
     }
 }
