@@ -23,12 +23,28 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsNotAsErrors>NU1901,NU1902,NU1903,NU1904</WarningsNotAsErrors>
 	  
-    <!-- net481 for embedding in ckan.exe. Framework dependent like ckan.exe. -->
-    <TargetFrameworks>net481</TargetFrameworks>
+    <!-- net481 for embedding in ckan.exe. Framework dependent like ckan.exe. net10.0 for ckan-windows.exe. -->
+    <TargetFrameworks>net481;net10.0</TargetFrameworks>
 	  
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <FileAlignment>512</FileAlignment>
     <NoWarn>IDE1006</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net10.0' ">
+	  
+    <!-- Published as self-contained win-x64 Native AOT so it works without bundling a second net10 runtime. -->
+    <PublishAot>true</PublishAot>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+	  
+    <!-- Cut unused features out of the native image for size. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <OptimizationPreference>Size</OptimizationPreference>
+    <StackTraceSupport>false</StackTraceSupport>
+    <DebuggerSupport>false</DebuggerSupport>
+    <EventSourceSupport>false</EventSourceSupport>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
+    <MetadataUpdaterSupport>false</MetadataUpdaterSupport>
   </PropertyGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net481' ">
     <Reference Include="System" />

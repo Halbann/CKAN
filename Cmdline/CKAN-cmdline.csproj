@@ -68,12 +68,15 @@
                       Overwrite="true" />
   </Target>
   <!-- For Windows builds, pack the URL handler exe into this assembly as an embedded resource.
-       This is the net481 handler built by the ProjectReference below. -->
+       Normally that is the net481 handler built by the ProjectReference below.
+       For ckan-windows.exe the Cake build publishes the handler with Native AOT first
+       and passes it in via AotUrlHandlerStubPath. AOT needs no installed runtime. -->
   <Target Name="EmbedURLHandlerStub"
           BeforeTargets="AssignTargetPaths"
           Condition=" '$(TargetFramework)' != 'net10.0' ">
     <PropertyGroup>
-      <_UrlHandlerStubPath Condition=" '$(Configuration)' != '' ">..\_build\out\CKAN-URLHandler\$(Configuration)\bin\net481\CKAN-URLHandler.exe</_UrlHandlerStubPath>
+      <_UrlHandlerStubPath Condition=" '$(EmbedAotUrlHandlerStub)' == 'true' ">$(AotUrlHandlerStubPath)</_UrlHandlerStubPath>
+      <_UrlHandlerStubPath Condition=" '$(_UrlHandlerStubPath)' == '' And '$(Configuration)' != '' ">..\_build\out\CKAN-URLHandler\$(Configuration)\bin\net481\CKAN-URLHandler.exe</_UrlHandlerStubPath>
       <_UrlHandlerStubPath Condition=" '$(_UrlHandlerStubPath)' == '' ">..\_build\out\CKAN-URLHandler\VSCodeIDE\bin\net481\CKAN-URLHandler.exe</_UrlHandlerStubPath>
     </PropertyGroup>
     <ItemGroup>
@@ -101,7 +104,7 @@
     </ProjectReference>
     <!-- Makes the net481 URL handler build first so that EmbedURLHandlerStub can embed it. -->
     <ProjectReference Include="..\URLHandler\CKAN-urlhandler.csproj"
-                      Condition=" '$(TargetFramework)' != 'net10.0' ">
+                      Condition=" '$(TargetFramework)' != 'net10.0' And '$(EmbedAotUrlHandlerStub)' != 'true' ">
       <SetTargetFramework>TargetFramework=net481</SetTargetFramework>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <UndefineProperties>RuntimeIdentifier;RuntimeIdentifiers;SelfContained;PublishSingleFile;PublishAot;PlatformTarget</UndefineProperties>
