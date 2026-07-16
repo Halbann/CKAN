@@ -5,6 +5,7 @@ using Autofac;
 
 using CKAN.Configuration;
 using CKAN.ConsoleUI.Toolkit;
+using CKAN.IO;
 
 namespace CKAN.ConsoleUI {
 
@@ -38,6 +39,14 @@ namespace CKAN.ConsoleUI {
                                               ?? new GameInstanceManager(new NullUser(),
                                                                          ServiceLocator.Container.Resolve<IConfiguration>());
 
+                // Register CKAN as the ckan:// URL handler.
+                // Null user skips the Windows UAC prompt. Run the GUI once to get the prompt.
+                URLHandlers.RegisterURLHandler(null, ServiceLocator.Container.Resolve<IConfiguration>());
+
+                // Listen for ckan:// URLs from other CKAN processes.
+                // URLs arriving before ModListScreen subscribes are dropped.
+                URLPipe.StartServer();
+
                 // The splash screen returns true when it's safe to run the rest of the app.
                 // This can be blocked by a lock file, for example.
                 if (new SplashScreen(manager, repoData).Run(theme)) {
@@ -63,6 +72,9 @@ namespace CKAN.ConsoleUI {
 
                     new ExitScreen().Run(theme);
                 }
+
+                // Don't wait for the pipe server to finish shutting down. The process is exiting anyway.
+                _ = URLPipe.StopServer();
             }
             else
             {

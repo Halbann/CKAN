@@ -18,7 +18,7 @@ namespace CKAN.ConsoleUI {
     /// <summary>
     /// Screen listing mods available for a given install
     /// </summary>
-    public class ModListScreen : ConsoleScreen {
+    public partial class ModListScreen : ConsoleScreen {
 
         /// <summary>
         /// Initialize the screen
