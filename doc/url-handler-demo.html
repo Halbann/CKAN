@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ckan:// test page</title>
+<style>
+  body { font-family: sans-serif; max-width: 800px; margin: 2em auto; padding: 0 1em; }
+  li { margin: 0.5em 0; }
+  a { font-family: monospace; }
+</style>
+</head>
+<body>
+
+<h1>ckan:// test page</h1>
+
+<p>Test links for the ckan:// handler. Operations are defined in
+Core/IO/ProtocolRouter.cs. A running CKAN picks the URL over a pipe, otherwise a new one is launched.</p>
+
+<h2>focus</h2>
+<p>Highlight a mod in the list.</p>
+<ul>
+<li><a href="ckan://focus?mod=JNSQ">ckan://focus?mod=JNSQ</a></li>
+<li><a href="ckan://focus?mod=Astrogator">ckan://focus?mod=Astrogator</a></li>
+</ul>
+
+<h2>search</h2>
+<p>Apply a search filter. %40 is an escaped @ for author search.</p>
+<ul>
+<li><a href="ckan://search?q=engine">ckan://search?q=engine</a></li>
+<li><a href="ckan://search?q=%40Nertea">ckan://search?q=%40Nertea</a></li>
+</ul>
+
+<h2>install</h2>
+<p>Add one or more mods to the changeset. mod:version pins a version.
+A version missing from the registry falls back to latest compatible.</p>
+<ul>
+<li><a href="ckan://install?mod=RealSolarSystem&amp;mod=ROEngines&amp;mod=ROTanks&amp;mod=ROCapsules&amp;mod=ROSolar">ckan://install?mod=RealSolarSystem&amp;mod=ROEngines&amp;mod=ROTanks&amp;mod=ROCapsules&amp;mod=ROSolar</a></li>
+<li><a href="ckan://install?mod=JNSQ:0.10.0&amp;mod=Astrogator:1.0.0">ckan://install?mod=JNSQ:0.10.0&amp;mod=Astrogator:1.0.0</a></li>
+</ul>
+
+</body>
+</html>
