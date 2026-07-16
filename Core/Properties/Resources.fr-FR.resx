@@ -780,4 +780,8 @@ Libérez de l'espace sur cet appareil ou modifiez vos paramètres pour utiliser 
   <data name="RelationshipTypeConflicts" xml:space="preserve">
     <value>Conflits</value>
   </data>
+  <data name="URLHandlersPrompt" xml:space="preserve">
+    <value>CKAN demande la permission d'ajouter un handler pour les adresses ckan://.
+Voulez-vous autoriser à faire cela ? Si vous cliquez non, vous ne verrez plus ce message.</value>
+  </data>
 </root>

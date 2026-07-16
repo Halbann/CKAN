@@ -10,6 +10,8 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 #endif
 
+using CKAN.IO;
+
 namespace CKAN.GUI
 {
     #if NET5_0_OR_GREATER
@@ -54,10 +56,8 @@ namespace CKAN.GUI
 
             if (args.Contains(URLHandlers.UrlRegistrationArgument))
             {
-                // Passing in null will cause a NullReferenceException if it tries to show the dialog
-                // asking for elevation permission, but we want that to happen. Doing that keeps us
-                // from getting in to a infinite loop of trying to register.
-                URLHandlers.RegisterURLHandler(null, null, null);
+                // Re-entry after the UAC prompt. Null user and config skip the prompt so we can't loop.
+                URLHandlers.RegisterURLHandler(null, null);
             }
             else
             {

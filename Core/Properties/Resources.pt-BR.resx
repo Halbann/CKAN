@@ -231,4 +231,8 @@ e tente novamente.</value>
   <data name="RelationshipTypeConflicts" xml:space="preserve">
     <value>Conflita</value>
   </data>
+  <data name="URLHandlersPrompt" xml:space="preserve">
+    <value>O CKAN requer permissão para adicionar um manipulador para ckan:// URLs.
+Você deseja permitir que o CKAN faça isso? Se você clicar em Não, você não verá esta mensagem novamente.</value>
+  </data>
 </root>

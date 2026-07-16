@@ -13,7 +13,9 @@ using System.Runtime.Versioning;
 
 using log4net;
 
-namespace CKAN.GUI
+using CKAN.Configuration;
+
+namespace CKAN.IO
 {
     [ExcludeFromCodeCoverage]
     public static class URLHandlers
@@ -22,7 +24,7 @@ namespace CKAN.GUI
         public  const  string UrlRegistrationArgument = "registerUrl";
 
         private static readonly string ApplicationsPath = ".local/share/applications/";
-        private const           string HandlerFileName  = "ckan-handler.desktop";
+        private const           string LinuxHandlerFilename  = "ckan-handler.desktop";
 
         static URLHandlers()
         {
@@ -42,7 +44,7 @@ namespace CKAN.GUI
             }
         }
 
-        public static void RegisterURLHandler(GUIConfiguration? config, GameInstance? instance, IUser? user)
+        public static void RegisterURLHandler(IUser? user, IConfiguration? config)
         {
             try
             {
@@ -58,7 +60,7 @@ namespace CKAN.GUI
                     }
                     catch (UnauthorizedAccessException)
                     {
-                        if (config == null || config.URLHandlerNoNag || instance == null)
+                        if (config?.URLHandlerNoNag ?? false)
                         {
                             return;
                         }
@@ -76,15 +78,17 @@ namespace CKAN.GUI
                                 Arguments = $"gui --asroot {UrlRegistrationArgument}"
                             });
                         }
-                        config.URLHandlerNoNag = true;
-                        config.Save(instance);
+
+                        // Whether the user said yes or no, don't ask again on the next launch.
+                        if (config != null)
+                        {
+                            config.URLHandlerNoNag = true;
+                        }
                         // Don't re-throw the exception because we just dealt with it
                     }
                 }
-                else if (Platform.IsMac)
-                {
-                    //TODO
-                }
+
+                // macOS URL handler is defined in CKAN.app info.plist.
             }
             catch (Exception ex)
             {
@@ -148,7 +152,7 @@ namespace CKAN.GUI
         {
             log.InfoFormat("Trying to register URL handler");
 
-            var handlerPath = Path.Combine(ApplicationsPath, HandlerFileName);
+            var handlerPath = Path.Combine(ApplicationsPath, LinuxHandlerFilename);
             var desiredExec = "mono \"" + PathToRunningExe() + "\" gui %u";
 
             var desiredContent = new StringBuilder()
@@ -178,7 +182,7 @@ namespace CKAN.GUI
                 File.WriteAllText(handlerPath, desiredContent, new UTF8Encoding(false));
                 AutoUpdate.SetExecutable(handlerPath);
 
-                RunCommand("xdg-mime", $"default {HandlerFileName} x-scheme-handler/ckan");
+                RunCommand("xdg-mime", $"default {LinuxHandlerFilename} x-scheme-handler/ckan");
                 RunCommand("update-desktop-database", ApplicationsPath);
             }
             else

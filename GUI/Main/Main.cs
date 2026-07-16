@@ -206,7 +206,7 @@ namespace CKAN.GUI
             Size = configuration.WindowSize;
             WindowState = configuration.IsWindowMaximised ? FormWindowState.Maximized : FormWindowState.Normal;
 
-            URLHandlers.RegisterURLHandler(configuration, CurrentInstance, currentUser);
+            URLHandlers.RegisterURLHandler(currentUser, ServiceLocator.Container.Resolve<IConfiguration>());
 
             Util.Invoke(this, () => Text = $"CKAN {Meta.GetVersion()}");
 

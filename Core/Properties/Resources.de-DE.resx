@@ -281,4 +281,9 @@ und versuche es erneut.</value>
   <data name="RelationshipTypeConflicts" xml:space="preserve">
     <value>Konflikt</value>
   </data>
+  <data name="URLHandlersPrompt" xml:space="preserve">
+    <value>CKAN benötigt eine Erlaubnis, um einen Handler für ckan:// URLs hinzuzufügen.
+Möchtest du CKAN dies erlauben?
+Wenn du auf Nein klickst, siehst du diese Nachricht nicht mehr.</value>
+  </data>
 </root>
