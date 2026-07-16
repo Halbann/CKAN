@@ -388,4 +388,7 @@ Free up space on that device or change your settings to use another location.
   <data name="RelationshipTypeConflicts" xml:space="preserve"><value>Conflicts</value></data>
   <data name="URLHandlersPrompt" xml:space="preserve"><value>CKAN requires permission to add a handler for ckan:// URLs.
 Do you want to allow CKAN to do this? If you click no you won't see this message again.</value></data>
+  <data name="URLHandlerNotListening" xml:space="preserve"><value>This CKAN window will not receive ckan:// URLs.
+Another CKAN window is probably already handling them.
+Check the log for details.</value></data>
 </root>

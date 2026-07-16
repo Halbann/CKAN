@@ -1349,7 +1349,7 @@ namespace CKAN.GUI
             }
         }
 
-        private void WithFrozenChangeset(Action action)
+        public void WithFrozenChangeset(Action action)
         {
             if (freezeChangeSet)
             {
