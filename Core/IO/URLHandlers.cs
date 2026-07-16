@@ -5,7 +5,6 @@ using System.Text;
 #if !NET5_0_OR_GREATER
 using System.Reflection;
 #endif
-using Microsoft.Win32;
 using System.Diagnostics.CodeAnalysis;
 #if NET5_0_OR_GREATER
 using System.Runtime.Versioning;
@@ -113,36 +112,25 @@ namespace CKAN.IO
         private static void RegisterURLHandler_Win32()
         {
             log.InfoFormat("Adding URL handler to registry");
-            string      urlCmd = $"{PathToRunningExe()} gui %1";
-            RegistryKey root   = Microsoft.Win32.Registry.ClassesRoot;
-            var ckanKey = root.OpenSubKey("ckan");
-            if (ckanKey != null)
-            {
-                try
-                {
-                    var path = ckanKey?.OpenSubKey("shell")
-                                      ?.OpenSubKey("open")
-                                      ?.OpenSubKey("command")
-                                      ?.GetValue("")
-                                      ?.ToString();
 
-                    if (path == urlCmd)
-                    {
-                        log.InfoFormat("URL handler already exists with the same path");
-                        return;
-                    }
-                    // Valid key not found, delete it
-                    root.DeleteSubKeyTree("ckan");
-                }
-                catch (Exception) { }
+            var urlCmd = $"\"{PathToRunningExe()}\" gui \"%1\"";
+
+            // Register per user so no admin rights are needed.
+            // Windows automatically gives this precedence over the old handler we used to register for all users.
+            using var classes = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"Software\Classes");
+            var existing = classes.OpenSubKey(@"ckan\shell\open\command")?.GetValue("")?.ToString();
+            if (existing == urlCmd)
+            {
+                log.InfoFormat("URL handler already registered with the same command");
+                return;
             }
-            ckanKey = root.CreateSubKey("ckan");
+
+            using var ckanKey = classes.CreateSubKey("ckan");
             ckanKey.SetValue("", "URL: ckan Protocol");
             ckanKey.SetValue("URL Protocol", "");
-            ckanKey.CreateSubKey("shell")
-                .CreateSubKey("open")
-                .CreateSubKey("command")
-                .SetValue("", urlCmd);
+
+            using var commandKey = ckanKey.CreateSubKey(@"shell\open\command");
+            commandKey.SetValue("", urlCmd);
         }
 
         #if NET5_0_OR_GREATER
