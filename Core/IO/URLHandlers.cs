@@ -1,10 +1,9 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
-#if !NET5_0_OR_GREATER
+using System.Linq;
 using System.Reflection;
-#endif
+using System.Text;
 using System.Diagnostics.CodeAnalysis;
 #if NET5_0_OR_GREATER
 using System.Runtime.Versioning;
@@ -24,6 +23,10 @@ namespace CKAN.IO
 
         private static readonly string ApplicationsPath = ".local/share/applications/";
         private const           string LinuxHandlerFilename  = "ckan-handler.desktop";
+
+        // WindowsHandlerResName must match the LogicalName in CKAN-cmdline.csproj.
+        private const string WindowsHandlerResName = "CKAN.CmdLine.ckan-urlhandler.exe";
+        private const string WindowsHandlerExeName = "ckan-urlhandler.exe";
 
         static URLHandlers()
         {
@@ -113,7 +116,13 @@ namespace CKAN.IO
         {
             log.InfoFormat("Adding URL handler to registry");
 
-            var urlCmd = $"\"{PathToRunningExe()}\" gui \"%1\"";
+            var stub = ExtractURLHandlerStub();
+            if (stub == null)
+            {
+                return;
+            }
+
+            var urlCmd = $"\"{stub}\" \"{PathToRunningExe()}\" \"%1\"";
 
             // Register per user so no admin rights are needed.
             // Windows automatically gives this precedence over the old handler we used to register for all users.
@@ -131,6 +140,36 @@ namespace CKAN.IO
 
             using var commandKey = ckanKey.CreateSubKey(@"shell\open\command");
             commandKey.SetValue("", urlCmd);
+        }
+
+        // Extract the embedded URL handler to %LOCALAPPDATA%\CKAN and return its path.
+        // Returns null if the stub is not embedded.
+        private static string? ExtractURLHandlerStub()
+        {
+            using var resource = Assembly.GetEntryAssembly()?.GetManifestResourceStream(WindowsHandlerResName);
+            if (resource == null)
+            {
+                log.InfoFormat("URL handler stub '{0}' not embedded. Skipping URL handler registration",
+                               WindowsHandlerResName);
+                return null;
+            }
+
+            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CKAN");
+            Directory.CreateDirectory(dir);
+            var stubPath = Path.Combine(dir, WindowsHandlerExeName);
+
+            // Read all bytes of embedded url handler.
+            using var ms = new MemoryStream();
+            resource.CopyTo(ms);
+            var wanted = ms.ToArray();
+
+            // Write when non-existent or the bytes differ.
+            if (!File.Exists(stubPath) || !File.ReadAllBytes(stubPath).SequenceEqual(wanted))
+            {
+                File.WriteAllBytes(stubPath, wanted);
+            }
+
+            return stubPath;
         }
 
         #if NET5_0_OR_GREATER

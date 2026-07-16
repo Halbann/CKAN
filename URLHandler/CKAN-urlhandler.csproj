@@ -1,0 +1,38 @@
+<Project>
+  <PropertyGroup>
+    <AssemblyName>CKAN-URLHandler</AssemblyName>
+    <OutputPath Condition=" '$(Configuration)' != '' ">..\_build\out\$(AssemblyName)\$(Configuration)\bin\</OutputPath>
+    <OutputPath Condition=" '$(Configuration)' == '' ">..\_build\out\$(AssemblyName)\VSCodeIDE\bin\</OutputPath>
+    <BaseIntermediateOutputPath Condition=" '$(Configuration)' != '' ">..\_build\out\$(AssemblyName)\$(Configuration)\obj\</BaseIntermediateOutputPath>
+    <BaseIntermediateOutputPath Condition=" '$(Configuration)' == '' ">..\_build\out\$(AssemblyName)\VSCodeIDE\obj\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <PropertyGroup>
+    <ProjectGuid>{DC40C717-697C-4CC2-A985-7304457E4732}</ProjectGuid>
+	  
+    <!-- WinExe so Windows launches it without a console. -->
+    <OutputType>WinExe</OutputType>
+	  
+    <RootNamespace>CKAN.URLHandler</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Deterministic>true</Deterministic>
+    <Configurations>Debug;Release</Configurations>
+    <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>9</LangVersion>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsNotAsErrors>NU1901,NU1902,NU1903,NU1904</WarningsNotAsErrors>
+	  
+    <!-- net481 for embedding in ckan.exe. Framework dependent like ckan.exe. -->
+    <TargetFrameworks>net481</TargetFrameworks>
+	  
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <FileAlignment>512</FileAlignment>
+    <NoWarn>IDE1006</NoWarn>
+  </PropertyGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net481' ">
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+  </ItemGroup>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+</Project>

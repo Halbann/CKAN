@@ -133,6 +133,7 @@ namespace CKAN.IO
         }
 
         // Forward a URL to the running instance. Returns true if delivered.
+        // Duplicated in URLHandler/Program.cs (Windows only URL handler exe).
         public static bool TrySend(string url, int timeoutMs = 50)
         {
             using var client = new NamedPipeClientStream(".", Name, PipeDirection.Out);
