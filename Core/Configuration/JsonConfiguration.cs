@@ -36,7 +36,6 @@ namespace CKAN.Configuration
             public Dictionary<string, string[]>? GlobalInstallFilters { get; set; } = new Dictionary<string, string[]>();
             public string?[]?                    PreferredHosts       { get; set; } = Array.Empty<string>();
             public bool?                         DevBuilds            { get; set; }
-            public bool?                         URLHandlerNoNag      { get; set; }
         }
 
         /// <summary>
@@ -279,17 +278,6 @@ namespace CKAN.Configuration
             set
             {
                 config.DevBuilds = value;
-                SaveConfig();
-            }
-        }
-
-        public bool URLHandlerNoNag
-        {
-            get => config.URLHandlerNoNag ?? false;
-
-            set
-            {
-                config.URLHandlerNoNag = value ? true : (bool?)null;
                 SaveConfig();
             }
         }

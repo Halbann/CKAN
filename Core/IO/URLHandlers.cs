@@ -11,15 +11,12 @@ using System.Runtime.Versioning;
 
 using log4net;
 
-using CKAN.Configuration;
-
 namespace CKAN.IO
 {
     [ExcludeFromCodeCoverage]
     public static class URLHandlers
     {
         private static readonly ILog log = LogManager.GetLogger(typeof(URLHandlers));
-        public  const  string UrlRegistrationArgument = "registerUrl";
 
         private static readonly string ApplicationsPath = ".local/share/applications/";
         private const           string LinuxHandlerFilename  = "ckan-handler.desktop";
@@ -46,7 +43,7 @@ namespace CKAN.IO
             }
         }
 
-        public static void RegisterURLHandler(IUser? user, IConfiguration? config)
+        public static void RegisterURLHandler()
         {
             try
             {
@@ -56,38 +53,7 @@ namespace CKAN.IO
                 }
                 else if (Platform.IsWindows)
                 {
-                    try
-                    {
-                        RegisterURLHandler_Win32();
-                    }
-                    catch (UnauthorizedAccessException)
-                    {
-                        if (config?.URLHandlerNoNag ?? false)
-                        {
-                            return;
-                        }
-
-                        if (user != null
-                            && user.RaiseYesNoDialog(Properties.Resources.URLHandlersPrompt))
-                        {
-                            // we need elevation to write to the registry
-                            Process.Start(new ProcessStartInfo(PathToRunningExe())
-                            {
-                                // trigger a UAC prompt (if UAC is enabled)
-                                Verb      = "runas",
-                                // .NET ignores Verb without this
-                                UseShellExecute = true,
-                                Arguments = $"gui --asroot {UrlRegistrationArgument}"
-                            });
-                        }
-
-                        // Whether the user said yes or no, don't ask again on the next launch.
-                        if (config != null)
-                        {
-                            config.URLHandlerNoNag = true;
-                        }
-                        // Don't re-throw the exception because we just dealt with it
-                    }
+                    RegisterURLHandler_Win32();
                 }
 
                 // macOS URL handler is defined in CKAN.app info.plist.

@@ -76,12 +76,6 @@ namespace CKAN.Configuration
         /// </summary>
         bool? DevBuilds { get; set; }
 
-        /// <summary>
-        /// True once the user has answered the ckan:// URL handler registration prompt.
-        /// Stored globally because the OS handler is not per-instance.
-        /// </summary>
-        bool URLHandlerNoNag { get; set; }
-
         event PropertyChangedEventHandler? PropertyChanged;
     }
 }

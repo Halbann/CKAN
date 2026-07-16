@@ -757,8 +757,4 @@ Zwolnij miejsce na tym urządzeniu lub zmień ustawienia, aby użyć innej lokal
   <data name="RelationshipTypeConflicts" xml:space="preserve">
     <value>Konflikty</value>
   </data>
-  <data name="URLHandlersPrompt" xml:space="preserve">
-    <value>CKAN wymaga uprawnień do obsługi linków ckan://.
-Czy chcesz zezwolić na to CKAN-owi? Jeśli klikniesz nie, nie zobaczysz tej wiadomości ponownie.</value>
-  </data>
 </root>

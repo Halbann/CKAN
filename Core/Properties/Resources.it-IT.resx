@@ -732,8 +732,4 @@ Libera spazio su quel dispositivo o modifica le impostazioni per utilizzare un'a
   <data name="RelationshipTypeConflicts" xml:space="preserve">
     <value>Conflitto</value>
   </data>
-  <data name="URLHandlersPrompt" xml:space="preserve">
-    <value>CKAN richiede l'autorizzazione per aggiungere un gestore per gli URL ckan:/.
-Vuoi consentire a CKAN di farlo? Se fai clic su no, non vedrai più questo messaggio.</value>
-  </data>
 </root>

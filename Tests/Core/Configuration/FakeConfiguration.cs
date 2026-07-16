@@ -199,8 +199,6 @@ namespace Tests.Core.Configuration
 
         public bool? DevBuilds { get; set; }
 
-        public bool URLHandlerNoNag { get; set; }
-
         #pragma warning disable CS0067
         public event PropertyChangedEventHandler? PropertyChanged;
         #pragma warning restore CS0067

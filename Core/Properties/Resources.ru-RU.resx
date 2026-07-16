@@ -650,8 +650,4 @@ https://github.com/KSP-CKAN/CKAN/wiki/SSL-certificate-errors</value>
   <data name="RelationshipTypeConflicts" xml:space="preserve">
     <value>Конфликтует с</value>
   </data>
-  <data name="URLHandlersPrompt" xml:space="preserve">
-    <value>CKAN нуждается в разрешении для добавления обработчика ссылок вида «ckan://».
-Хотите ли вы разрешить CKAN это делать? При выборе «Нет» вы не увидите это сообщение снова.</value>
-  </data>
 </root>

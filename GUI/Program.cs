@@ -10,8 +10,6 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 #endif
 
-using CKAN.IO;
-
 namespace CKAN.GUI
 {
     #if NET5_0_OR_GREATER
@@ -54,34 +52,26 @@ namespace CKAN.GUI
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            if (args.Contains(URLHandlers.UrlRegistrationArgument))
+            #if NET10_0_OR_GREATER
+            if (Platform.IsWindows && Util.DarkMode)
             {
-                // Re-entry after the UAC prompt. Null user and config skip the prompt so we can't loop.
-                URLHandlers.RegisterURLHandler(null, null);
+                Application.SetColorMode(SystemColorMode.System);
             }
-            else
+            #endif
+            var main = new Main(args, manager, userAgent);
+            if (Platform.IsWindows && Util.DarkMode)
             {
-                #if NET10_0_OR_GREATER
-                if (Platform.IsWindows && Util.DarkMode)
-                {
-                    Application.SetColorMode(SystemColorMode.System);
-                }
-                #endif
-                var main = new Main(args, manager, userAgent);
-                if (Platform.IsWindows && Util.DarkMode)
-                {
-                    int val = 1;
-                    DwmSetWindowAttribute(main.Handle, DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1,
-                                          ref val, sizeof(int));
-                    DwmSetWindowAttribute(main.Handle, DWMWA_USE_IMMERSIVE_DARK_MODE,
-                                          ref val, sizeof(int));
-                }
-                if (!showConsole)
-                {
-                    Util.HideConsoleWindow();
-                }
-                Application.Run(main);
+                int val = 1;
+                DwmSetWindowAttribute(main.Handle, DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1,
+                                      ref val, sizeof(int));
+                DwmSetWindowAttribute(main.Handle, DWMWA_USE_IMMERSIVE_DARK_MODE,
+                                      ref val, sizeof(int));
             }
+            if (!showConsole)
+            {
+                Util.HideConsoleWindow();
+            }
+            Application.Run(main);
         }
 
         public static void UnhandledExceptionEventHandler(object sender, UnhandledExceptionEventArgs e)

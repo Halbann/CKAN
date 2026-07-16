@@ -40,8 +40,7 @@ namespace CKAN.ConsoleUI {
                                                                          ServiceLocator.Container.Resolve<IConfiguration>());
 
                 // Register CKAN as the ckan:// URL handler.
-                // Null user skips the Windows UAC prompt. Run the GUI once to get the prompt.
-                URLHandlers.RegisterURLHandler(null, ServiceLocator.Container.Resolve<IConfiguration>());
+                URLHandlers.RegisterURLHandler();
 
                 // Listen for ckan:// URLs from other CKAN processes.
                 // URLs arriving before ModListScreen subscribes are dropped.

@@ -783,8 +783,4 @@ Owning Mod(已有Mod): {2}</value>
   <data name="RelationshipTypeConflicts" xml:space="preserve">
     <value>冲突</value>
   </data>
-  <data name="URLHandlersPrompt" xml:space="preserve">
-    <value>CKAN需要获得计算机的管理员权限.
-您是否允许CKAN这么做? 如果您不允许，将不会再看到此消息.</value>
-  </data>
 </root>
