@@ -19,6 +19,7 @@ using log4net.Core;
 using CKAN.Configuration;
 using CKAN.Versioning;
 using CKAN.Games;
+using CKAN.IO;
 
 namespace CKAN.CmdLine
 {
@@ -71,6 +72,22 @@ namespace CKAN.CmdLine
                 log.Info("Verbose logging enabled");
             }
             log.Info("CKAN started.");
+
+            // On Linux, a ckan:// click launches `ckan gui <url>`. If a GUI is already running,
+            // hand the URL to it over the pipe instead of starting a second one.
+            // On Windows, a ckan:// click launches a dedicated URL handler exe.
+            // todo: mac explanation
+            if (args.Length > 1 && args[0] == "gui" && args[1].StartsWith("ckan://"))
+            {
+                log.Info("URL handler launch detected. Trying to hand off to a running instance");
+                if (URLPipe.TrySend(args[1]))
+                {
+                    log.Info("URL handed off. Exiting");
+                    return 0;
+                }
+
+                log.Info("No running instance found. Proceeding to launch");
+            }
 
             // Force-allow TLS 1.2 for HTTPS URLs, because GitHub requires it.
             // This is on by default in .NET 4.6, but not in 4.5.
