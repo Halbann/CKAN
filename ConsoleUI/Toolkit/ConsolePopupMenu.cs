@@ -47,7 +47,10 @@ namespace CKAN.ConsoleUI.Toolkit {
             bool done = false;
             do {
                 Draw(theme, right, top);
-                ConsoleKeyInfo k = Console.ReadKey(true);
+                if (ConsoleInput.PumpEvent() is not ConsoleKeyInfo k) {
+                    // A posted action ran. Redraw and wait again.
+                    continue;
+                }
                 switch (k.Key) {
                     case ConsoleKey.UpArrow:
                         do {

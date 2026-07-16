@@ -25,6 +25,10 @@ namespace CKAN.ConsoleUI {
         {
             if (ConsoleTheme.Themes.TryGetValue(themeName ?? "default", out ConsoleTheme? theme))
             {
+                // Start the key reader thread. Input goes through a queue so that
+                // other threads can post work onto the UI thread.
+                ConsoleInput.Start();
+
                 var repoData = ServiceLocator.Container.Resolve<RepositoryDataManager>();
                 // GameInstanceManager only uses its IUser object to construct game instance objects,
                 // which only use it to inform the user about the creation of the CKAN/ folder.

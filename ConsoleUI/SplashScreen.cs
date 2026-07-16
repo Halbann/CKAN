@@ -41,7 +41,7 @@ namespace CKAN.ConsoleUI {
             // Draw screen with press any key
             Draw(theme, true);
             // Wait for a key
-            Console.ReadKey(true);
+            ConsoleInput.NextKey();
             return true;
         }
 

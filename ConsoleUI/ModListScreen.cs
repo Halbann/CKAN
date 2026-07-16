@@ -425,7 +425,7 @@ namespace CKAN.ConsoleUI {
             ConsoleKeyInfo k = default;
             ConsoleMessageDialog keyprompt = new ConsoleMessageDialog(theme, Properties.Resources.ModListPressAKey, new List<string>());
             keyprompt.Run(() => {
-                k = Console.ReadKey(true);
+                k = ConsoleInput.NextKey();
             });
             ConsoleMessageDialog output = new ConsoleMessageDialog(
                 theme,
@@ -644,7 +644,7 @@ namespace CKAN.ConsoleUI {
                 {
                     deduper.DeduplicateAll(ps);
                     ps.RaiseMessage(Properties.Resources.SplashPressAnyKey);
-                    Console.ReadKey(true);
+                    ConsoleInput.NextKey();
                 }
                 catch (CancelledActionKraken)
                 {
