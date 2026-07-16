@@ -783,4 +783,9 @@ Owning Mod(已有Mod): {2}</value>
   <data name="RelationshipTypeConflicts" xml:space="preserve">
     <value>冲突</value>
   </data>
+  <data name="URLHandlerNotListening" xml:space="preserve">
+    <value>此 CKAN 窗口将不会接收 ckan:// 链接。
+可能已有另一个 CKAN 窗口在处理它们。
+详情请查看日志。</value>
+  </data>
 </root>

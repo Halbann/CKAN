@@ -757,4 +757,9 @@ Zwolnij miejsce na tym urządzeniu lub zmień ustawienia, aby użyć innej lokal
   <data name="RelationshipTypeConflicts" xml:space="preserve">
     <value>Konflikty</value>
   </data>
+  <data name="URLHandlerNotListening" xml:space="preserve">
+    <value>To okno CKAN nie będzie odbierać adresów ckan://.
+Prawdopodobnie inne okno CKAN już je obsługuje.
+Szczegóły znajdziesz w logu.</value>
+  </data>
 </root>

@@ -281,4 +281,9 @@ und versuche es erneut.</value>
   <data name="RelationshipTypeConflicts" xml:space="preserve">
     <value>Konflikt</value>
   </data>
+  <data name="URLHandlerNotListening" xml:space="preserve">
+    <value>Dieses CKAN-Fenster wird keine ckan://-URLs empfangen.
+Wahrscheinlich verarbeitet bereits ein anderes CKAN-Fenster diese.
+Siehe Log für Details.</value>
+  </data>
 </root>

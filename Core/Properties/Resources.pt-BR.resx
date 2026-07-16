@@ -231,4 +231,9 @@ e tente novamente.</value>
   <data name="RelationshipTypeConflicts" xml:space="preserve">
     <value>Conflita</value>
   </data>
+  <data name="URLHandlerNotListening" xml:space="preserve">
+    <value>Esta janela do CKAN não receberá URLs ckan://.
+Outra janela do CKAN provavelmente já está lidando com elas.
+Verifique o log para mais detalhes.</value>
+  </data>
 </root>

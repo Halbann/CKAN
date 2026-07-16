@@ -208,4 +208,9 @@ https://github.com/KSP-CKAN/NetKAN/issues/new/choose
   <data name="RelationshipTypeConflicts" xml:space="preserve">
     <value>衝突</value>
   </data>
+  <data name="URLHandlerNotListening" xml:space="preserve">
+    <value>このCKANウィンドウはckan:// URLを受信しません。
+おそらく別のCKANウィンドウがすでに処理しています。
+詳細はログを確認してください。</value>
+  </data>
 </root>

@@ -732,4 +732,9 @@ Libera spazio su quel dispositivo o modifica le impostazioni per utilizzare un'a
   <data name="RelationshipTypeConflicts" xml:space="preserve">
     <value>Conflitto</value>
   </data>
+  <data name="URLHandlerNotListening" xml:space="preserve">
+    <value>Questa finestra di CKAN non riceverà gli URL ckan://.
+Probabilmente un'altra finestra di CKAN li sta già gestendo.
+Controlla il log per i dettagli.</value>
+  </data>
 </root>
