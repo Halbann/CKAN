@@ -58,7 +58,7 @@ namespace CKAN.GUI
         }
 
         // Bring CKAN to the foreground after handling a ckan:// URL.
-        // Windows demotes this to a taskbar flash rather than allow a focus steal but whatever.
+        // The url handler stub grants us its foreground rights first. Without them Windows demotes this to a taskbar flash.
         private void RaiseToForeground()
         {
             if (WindowState == FormWindowState.Minimized)

@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Win32.SafeHandles;
 
 // Dedicated Windows-only ckan:// protocol handler.
 // ckan.exe is a console app so on Windows it always gets a console window
@@ -49,6 +50,14 @@ namespace CKAN.URLHandler
             {
                 using var client = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
                 client.Connect(50);
+
+                // CKAN GUI can't bring its own window to the front. This program inherits that right
+                // from the browser's link click. Grant it to CKAN before sending.
+                if (GetNamedPipeServerProcessId(client.SafePipeHandle, out var pid))
+                {
+                    _ = AllowSetForegroundWindow(pid);
+                }
+
                 using var writer = new StreamWriter(client) { AutoFlush = true };
                 writer.WriteLine(url);
 
@@ -64,13 +73,19 @@ namespace CKAN.URLHandler
         {
             try
             {
-                Process.Start(new ProcessStartInfo
+                var proc = Process.Start(new ProcessStartInfo
                 {
                     FileName = ckanExe,
                     Arguments = $"gui \"{url}\"",
-                    UseShellExecute = false, 
+                    UseShellExecute = false,
                     CreateNoWindow = true, // Prevents a console popup. GUI window is unaffected.
                 });
+
+                // Same foreground rights handoff as the pipe path.
+                if (proc != null)
+                {
+                    _ = AllowSetForegroundWindow((uint)proc.Id);
+                }
 
                 return true;
             }
@@ -86,5 +101,11 @@ namespace CKAN.URLHandler
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern int MessageBox(IntPtr hWnd, string text, string caption, uint type);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool GetNamedPipeServerProcessId(SafePipeHandle pipe, out uint pid);
+
+        [DllImport("user32.dll")]
+        private static extern bool AllowSetForegroundWindow(uint pid);
     }
 }
