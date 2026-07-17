@@ -176,7 +176,8 @@ namespace CKAN.GUI
 
                         // Setting SelectedMod is the same thing as when the user ticks an install checkbox.
                         // Therefore URL clicks accumulate with anything already marked and the user can remove mods normally.
-                        if ((ManageMods.MainModList?.full_list_of_mod_rows.TryGetValue(modId, out var row) ?? false)
+                        if (ManageMods.MainModList?.full_list_of_mod_rows is { } rows
+                            && rows.TryGetValue(modId, out var row)
                             && row.Tag is GUIMod gmod)
                         {
                             gmod.SelectedMod = module;
