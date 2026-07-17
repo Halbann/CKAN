@@ -67,10 +67,10 @@
                       Lines="$([System.IO.File]::ReadAllText('$(IntermediateOutputPath)Resources.Designer.cs').Replace('new global::System.Resources.ResourceManager', 'new SingleAssemblyResourceManager').Replace('internal', 'public'))"
                       Overwrite="true" />
   </Target>
-  <!-- For Windows builds, pack the URL handler exe into this assembly as an embedded resource.
-       Normally that is the net481 handler built by the ProjectReference below.
-       For ckan-windows.exe the Cake build publishes the handler with Native AOT first
-       and passes it in via AotUrlHandlerStubPath. AOT needs no installed runtime. -->
+  <!-- Pack the URL handler exe into this assembly as an embedded resource, except in
+       the net10.0 build, which doesn't run on Windows. Normally that is the net481 handler
+       built by the ProjectReference below. For ckan-windows.exe the Cake build publishes the
+       handler with Native AOT first and passes it in via AotUrlHandlerStubPath. -->
   <Target Name="EmbedURLHandlerStub"
           BeforeTargets="AssignTargetPaths"
           Condition=" '$(TargetFramework)' != 'net10.0' ">
