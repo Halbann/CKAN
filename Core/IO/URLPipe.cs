@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.IO.Pipes;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -44,47 +45,45 @@ namespace CKAN.IO
             log.Debug("Starting URL pipe server task");
             serverTask = Task.Run(async () =>
             {
-                var server = initialServer;
+                // Keep one server instance for all clients. On Unix a send can connect before the
+                // server accepts. Rebinding the pipe after each URL would drop those sends.
+                using var server = initialServer;
                 while (true)
                 {
-                    using (server)
+                    try
                     {
-                        try
-                        {
-                            await server.WaitForConnectionAsync(token);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            return;
-                        }
-                        // Cancelling the wait can also surface as an IOException.
-                        catch (IOException) when (token.IsCancellationRequested)
-                        {
-                            return;
-                        }
-
-                        using var reader = new StreamReader(server);
-                        var url = await reader.ReadLineAsync();
-
-                        log.DebugFormat("Pipe received URL: {0}", url);
-                        if (!string.IsNullOrWhiteSpace(url))
-                        {
-                            ProtocolRouter.Handle(url);
-                        }
+                        await server.WaitForConnectionAsync(token);
                     }
-
-                    if (token.IsCancellationRequested)
+                    catch (OperationCanceledException)
+                    {
+                        return;
+                    }
+                    // Cancelling the wait can also surface as an IOException.
+                    catch (IOException) when (token.IsCancellationRequested)
                     {
                         return;
                     }
 
+                    string? url = null;
                     try
                     {
-                        server = NewPipeServer();
+                        using var reader = new StreamReader(server, Encoding.UTF8, true, 1024, leaveOpen: true);
+                        url = await reader.ReadLineAsync();
                     }
                     catch (IOException ex)
                     {
-                        log.WarnFormat("URL pipe re-bind failed: {0}. Stopping server.", ex.Message);
+                        log.WarnFormat("URL pipe read failed: {0}", ex.Message);
+                    }
+                    server.Disconnect();
+
+                    log.DebugFormat("Pipe received URL: {0}", url);
+                    if (url != null && !string.IsNullOrWhiteSpace(url))
+                    {
+                        ProtocolRouter.Handle(url);
+                    }
+
+                    if (token.IsCancellationRequested)
+                    {
                         return;
                     }
                 }
@@ -106,7 +105,7 @@ namespace CKAN.IO
 
             cts.Cancel();
 
-            // net481 ignores the Cancel once WaitForConnectionAsync is waiting.
+            // net481 and the Unix implementation ignore the Cancel once WaitForConnectionAsync is waiting.
             // Therefore connect to complete the wait instead.
             try
             {

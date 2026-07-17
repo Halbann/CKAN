@@ -66,7 +66,7 @@ namespace Tests.Core.IO
                 Assert.IsTrue(received.Wait(2000));
                 Assert.AreEqual("JNSQ", mod);
 
-                // The server tears down the pipe and rebinds after each URL. Send again to cover that.
+                // The server disconnects and re-connects after each URL. Send again to cover that.
                 received.Reset();
                 Assert.IsTrue(URLPipe.TrySend("ckan://focus?mod=Astrogator", 500));
                 Assert.IsTrue(received.Wait(2000));
