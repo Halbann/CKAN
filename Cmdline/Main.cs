@@ -78,12 +78,21 @@ namespace CKAN.CmdLine
             var urlIndex = Array.IndexOf(args, "--url");
             if (urlIndex >= 0 && urlIndex + 1 < args.Length && !args.Contains("--no-handoff"))
             {
-                if (URLPipe.TrySend(args[urlIndex + 1]))
+                var url = args[urlIndex + 1];
+                if (URLPipe.TrySend(url))
                 {
                     log.Info("URL handed off to a running instance. Exiting");
                     return Exit.OK;
                 }
                 log.Info("No running instance found. Launching");
+
+                // The console UI can't draw without a terminal, and a desktop entry launch has none.
+                if (Platform.IsUnix && args[0] == "consoleui"
+                    && Console.IsInputRedirected && Console.IsOutputRedirected
+                    && URLHandlers.RelaunchConsoleUIInTerminal(url))
+                {
+                    return Exit.OK;
+                }
             }
 
             // Force-allow TLS 1.2 for HTTPS URLs, because GitHub requires it.

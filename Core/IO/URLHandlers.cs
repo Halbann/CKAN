@@ -19,7 +19,8 @@ namespace CKAN.IO
         private static readonly ILog log = LogManager.GetLogger(typeof(URLHandlers));
 
         private static readonly string ApplicationsPath = ".local/share/applications/";
-        private const           string LinuxHandlerFilename  = "ckan-handler.desktop";
+        private const string LinuxHandlerFilename = "ckan-handler.desktop";
+        private const string LinuxConsoleUIFilename = "ckan-url-consoleui.desktop";
 
         // WindowsHandlerResName must match the LogicalName in CKAN-cmdline.csproj.
         private const string WindowsHandlerResName = "CKAN.CmdLine.ckan-urlhandler.exe";
@@ -148,49 +149,82 @@ namespace CKAN.IO
         {
             log.InfoFormat("Trying to register URL handler");
 
-            var handlerPath = Path.Combine(ApplicationsPath, LinuxHandlerFilename);
-            var desiredExec = "mono \"" + PathToRunningExe() + "\" " + uiCommand + " --url %u";
+            // Terminal=false even for the console UI because a Terminal=true handler would flash a terminal on warm handoff.
+            // Console UI cold start gets relaunched instead. See RelaunchConsoleUIInTerminal.
 
-            // The console UI needs a terminal window to draw in. The GUI hosts its own.
-            var terminal = uiCommand == "consoleui" ? "Terminal=true" : "Terminal=false";
+            string handlerExec = $"mono \"{PathToRunningExe()}\" {uiCommand} --url %u";
+            string handlerPath = Path.Combine(ApplicationsPath, LinuxHandlerFilename);
 
-            var desiredContent = new StringBuilder()
-                .AppendLine("[Desktop Entry]")
-                .AppendLine("Version=1.0")
-                .AppendLine("Type=Application")
-                .AppendLine($"Exec={desiredExec}")
-                .AppendLine("Icon=ckan")
-                .AppendLine("StartupNotify=true")
-                .AppendLine("NoDisplay=true")
-                .AppendLine(terminal)
-                .AppendLine("Categories=Utility")
-                .AppendLine("MimeType=x-scheme-handler/ckan")
-                .AppendLine("Name=CKAN Launcher")
-                .AppendLine("Comment=Launch CKAN")
-                .ToString();
-
-            var existingContent = File.Exists(handlerPath)
-                ? File.ReadAllText(handlerPath)
-                : null;
-
-            if (existingContent != desiredContent)
+            if (WriteDesktopEntry(handlerPath, DesktopEntry("CKAN Launcher", handlerExec, false, true)))
             {
-                log.InfoFormat("Writing URL handler desktop file to {0}", handlerPath);
-
-                // Write without a Byte Order Mark. update-desktop-database errors on BOM-prefixed files.
-                File.WriteAllText(handlerPath, desiredContent, new UTF8Encoding(false));
-                AutoUpdate.SetExecutable(handlerPath);
-
                 RunCommand("xdg-mime", $"default {LinuxHandlerFilename} x-scheme-handler/ckan");
                 RunCommand("update-desktop-database", ApplicationsPath);
             }
-            else
-            {
-                log.InfoFormat("URL handler desktop file is already up to date");
-            }
         }
 
-        private static void RunCommand(string command, string args)
+        private static string DesktopEntry(string name, string exec, bool terminal, bool scheme)
+        {
+            var sb = new StringBuilder()
+                .AppendLine("[Desktop Entry]")
+                .AppendLine("Version=1.0")
+                .AppendLine("Type=Application")
+                .AppendLine($"Exec={exec}")
+                .AppendLine("Icon=ckan")
+                .AppendLine("StartupNotify=true")
+                .AppendLine("NoDisplay=true")
+                .AppendLine($"Terminal={(terminal ? "true" : "false")}")
+                .AppendLine("Categories=Utility");
+
+            if (scheme)
+            {
+                sb.AppendLine("MimeType=x-scheme-handler/ckan");
+            }
+
+            return sb.AppendLine($"Name={name}")
+                     .AppendLine("Comment=Launch CKAN")
+                     .ToString();
+        }
+
+        private static bool WriteDesktopEntry(string path, string content)
+        {
+            if (File.Exists(path) && File.ReadAllText(path) == content)
+            {
+                log.InfoFormat("Desktop file {0} is already up to date", path);
+
+                return false;
+            }
+
+            log.InfoFormat("Writing desktop file to {0}", path);
+
+            // Write without a Byte Order Mark. update-desktop-database errors on BOM-prefixed files.
+            File.WriteAllText(path, content, new UTF8Encoding(false));
+            AutoUpdate.SetExecutable(path);
+
+            return true;
+        }
+
+        // We have no terminal to draw in, so write an entry that does have one and launch that.
+        public static bool RelaunchConsoleUIInTerminal(string url)
+        {
+            // We know this is the cold case. --no-handoff skips retrying the pipe.
+            string entry = DesktopEntry("CKAN Console UI", $"mono \"{PathToRunningExe()}\" consoleui --url %u --no-handoff", true, false);
+            string path = Path.Combine(ApplicationsPath, LinuxConsoleUIFilename);
+            WriteDesktopEntry(path, entry);
+
+            // gio launch opens the user's terminal without us hardcoding anything.
+            // gio is from glib2 so it is practically always available.
+            if (RunCommand("gio", $"launch \"{path}\" \"{url}\""))
+            {
+                return true;
+            }
+
+            log.Error("Could not relaunch the console UI in a terminal. Is gio (glib2) installed?");
+
+            return false;
+        }
+
+        // Returns true if the command ran and succeeded.
+        private static bool RunCommand(string command, string args)
         {
             try
             {
@@ -211,7 +245,11 @@ namespace CKAN.IO
                     {
                         log.WarnFormat("{0} exited with code {1}: {2}",
                                        command, process.ExitCode, stderr);
+
+                        return false;
                     }
+
+                    return true;
                 }
             }
             catch (Exception ex)
@@ -219,6 +257,8 @@ namespace CKAN.IO
                 // xdg-mime and update-desktop-database are not guaranteed to be on all systems.
                 log.WarnFormat("Could not run {0}: {1}", command, ex.Message);
             }
+
+            return false;
         }
     }
 }
