@@ -17,7 +17,7 @@ namespace CKAN.IO
         public static string Name { get; internal set; } = "CKAN_URL_PIPE";
 
         private static readonly ILog log = LogManager.GetLogger(typeof(URLPipe));
-        private static CancellationTokenSource? cts;
+        private static CancellationTokenSource? cancellationToken;
         private static Task? serverTask;
 
         // Returns false if another instance already owns the pipe.
@@ -39,47 +39,42 @@ namespace CKAN.IO
                 return false;
             }
 
-            cts = new CancellationTokenSource();
-            var token = cts.Token;
+            cancellationToken = new CancellationTokenSource();
+            var token = cancellationToken.Token;
 
             log.Debug("Starting URL pipe server task");
             serverTask = Task.Run(async () =>
             {
-                // Keep one server instance for all clients. On Unix a send can connect before the
-                // server accepts. Rebinding the pipe after each URL would drop those sends.
                 using var server = initialServer;
                 while (true)
                 {
                     try
                     {
                         await server.WaitForConnectionAsync(token);
+
+                        using var reader = new StreamReader(server, Encoding.UTF8, true, 1024, leaveOpen: true);
+                        var url = await reader.ReadLineAsync();
+
+                        server.Disconnect();
+
+                        log.DebugFormat("Pipe received URL: {0}", url);
+                        ProtocolRouter.Handle(url);
                     }
                     catch (OperationCanceledException)
                     {
                         return;
                     }
-                    // Cancelling the wait can also surface as an IOException.
-                    catch (IOException) when (token.IsCancellationRequested)
+                    // URL could come from anywhere so a failure here should probably not kill the server. 
+                    catch (Exception ex)
                     {
-                        return;
+                        log.WarnFormat("URL pipe error: {0}", ex.Message);
                     }
-
-                    string? url = null;
-                    try
+                    finally
                     {
-                        using var reader = new StreamReader(server, Encoding.UTF8, true, 1024, leaveOpen: true);
-                        url = await reader.ReadLineAsync();
-                    }
-                    catch (IOException ex)
-                    {
-                        log.WarnFormat("URL pipe read failed: {0}", ex.Message);
-                    }
-                    server.Disconnect();
-
-                    log.DebugFormat("Pipe received URL: {0}", url);
-                    if (url != null && !string.IsNullOrWhiteSpace(url))
-                    {
-                        ProtocolRouter.Handle(url);
+                        if (server.IsConnected)
+                        {
+                            server.Disconnect();
+                        }
                     }
 
                     if (token.IsCancellationRequested)
@@ -98,24 +93,13 @@ namespace CKAN.IO
 
         public static async Task StopServer()
         {
-            if (cts == null)
+            if (cancellationToken == null)
             {
                 return;
             }
 
-            cts.Cancel();
+            cancellationToken.Cancel();
 
-            // net481 and the Unix implementation ignore the Cancel once WaitForConnectionAsync is waiting.
-            // Therefore connect to complete the wait instead.
-            try
-            {
-                using var client = new NamedPipeClientStream(".", Name, PipeDirection.Out);
-                await client.ConnectAsync(50);
-            }
-            catch
-            { }
-
-            // Reset even if the task faulted. Otherwise StartServer can never run again.
             try
             {
                 if (serverTask != null)
@@ -125,8 +109,8 @@ namespace CKAN.IO
             }
             finally
             {
-                cts.Dispose();
-                cts = null;
+                cancellationToken.Dispose();
+                cancellationToken = null;
                 serverTask = null;
             }
         }

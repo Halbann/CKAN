@@ -22,16 +22,13 @@ namespace CKAN.IO
         // Call once subscribed. Handles the --url URL if there was one.
         public static void HandlePendingLaunchUrl()
         {
-            if (PendingLaunchUrl != null)
-            {
-                Handle(PendingLaunchUrl);
-                PendingLaunchUrl = null;
-            }
+            Handle(PendingLaunchUrl);
+            PendingLaunchUrl = null;
         }
 
-        public static void Handle(string rawUrl)
+        public static void Handle(string? rawUrl)
         {
-            if (string.IsNullOrWhiteSpace(rawUrl))
+            if (rawUrl == null || string.IsNullOrWhiteSpace(rawUrl))
             {
                 return;
             }
