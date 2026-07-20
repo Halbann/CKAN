@@ -9,6 +9,18 @@ This works on Windows and Linux. Adding macOS support is a bit tricker and not w
 There's currently no special handling for different games; it just tries to use the current instance,
 even if the mod in the URL is for a different game.
 
+The name you use for a mod in a URL is called its Identifier. You can find this in the mod info panel in the GUI.
+Not only does an identifier not contain any spaces, but it can sometimes differ significantly from the mod title,
+so make sure you write the actual identifier when writing a CKAN URL.
+
+Some examples:
+
+- 'Real Solar System' -> `RealSolarSystem`
+- 'EVE - Stock Planet Configs' -> `EnvironmentalVisualEnhancements-HR`
+- 'Scatterer Default Config' -> `Scatterer-config`
+
+For convenience, identifiers in URLs can be case-insensitive. So `realsolarsystem` finds the same mod as `RealSolarSystem`.
+
 ## Operations
 
 ### Focus
@@ -52,7 +64,6 @@ If that version isn't in the registry, then the latest compatible version is use
 
 - Windows: registered per user via the registry the first time CKAN runs.
 - Linux: a .desktop handler is written to ~/.local/share/applications when CKAN runs.
-- macOS: WIP. The scheme is declared in the app bundle, but clicked links are not handled yet.
 
 ## Linking
 
