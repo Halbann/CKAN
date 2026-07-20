@@ -86,6 +86,7 @@ namespace CKAN.GUI
                 if (CurrentInstance != null)
                 {
                     var reg = RegistryManager.Instance(CurrentInstance, repoData).registry;
+                    var rows = ManageMods.MainModList?.full_list_of_mod_rows;
                     var marked = false;
 
                     // Freeze so the changeset recomputes once at the end instead of once per mod.
@@ -93,11 +94,15 @@ namespace CKAN.GUI
                     {
                         foreach (var (modId, version) in mods)
                         {
+                            var ident = rows == null
+                                            ? modId
+                                            : ProtocolRouter.CanonicalIdentifier(modId, rows.Keys) ?? modId;
+
                             // Resolve the identifier and optional pinned version to a module in the registry.
                             CkanModule? module = null;
                             if (version != null)
                             {
-                                module = reg.GetModuleByVersion(modId, version);
+                                module = reg.GetModuleByVersion(ident, version);
                                 if (module == null)
                                 {
                                     urlLog.WarnFormat("Version {0} of {1} not in registry. Falling back to latest compatible",
@@ -109,7 +114,7 @@ namespace CKAN.GUI
                             // when the identifier isn't in the registry at all.
                             try
                             {
-                                module ??= reg.LatestAvailable(modId,
+                                module ??= reg.LatestAvailable(ident,
                                                                CurrentInstance.StabilityToleranceConfig,
                                                                CurrentInstance.VersionCriteria());
                             }
@@ -126,8 +131,8 @@ namespace CKAN.GUI
 
                             // Setting SelectedMod is the same thing as when the user ticks an install checkbox.
                             // Therefore URL clicks accumulate with anything already marked and the user can remove mods normally.
-                            if (ManageMods.MainModList?.full_list_of_mod_rows is { } rows
-                                && rows.TryGetValue(modId, out var row)
+                            if (rows != null
+                                && rows.TryGetValue(ident, out var row)
                                 && row.Tag is GUIMod gmod)
                             {
                                 gmod.SelectedMod = module;

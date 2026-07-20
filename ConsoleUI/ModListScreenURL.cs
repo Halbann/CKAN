@@ -70,11 +70,16 @@ namespace CKAN.ConsoleUI {
                 bool installAny = false;
 
                 foreach (var (modId, version) in mods) {
+                    var ident = allMods == null
+                                    ? modId
+                                    : ProtocolRouter.CanonicalIdentifier(modId, allMods.ConvertAll(m => m.identifier))
+                                      ?? modId;
+
                     CkanModule? module = null;
 
                     // If version provided, search for the versioned mod.
                     if (version != null) {
-                        module = registry.GetModuleByVersion(modId, version);
+                        module = registry.GetModuleByVersion(ident, version);
                         if (module == null) {
                             urlLog.WarnFormat("Version {0} of {1} not in registry. Using latest compatible.",
                                               version, modId);
@@ -84,7 +89,7 @@ namespace CKAN.ConsoleUI {
                     // If still null, find latest. Throws rather than returning null
                     // when the identifier isn't in the registry at all.
                     try {
-                        module ??= registry.LatestAvailable(modId,
+                        module ??= registry.LatestAvailable(ident,
                                                             manager.CurrentInstance.StabilityToleranceConfig,
                                                             manager.CurrentInstance.VersionCriteria());
                     } catch (ModuleNotFoundKraken) {
