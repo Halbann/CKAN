@@ -202,9 +202,4 @@ Owning Mod: {2}</value>
   <data name="RelationshipTypeConflicts" xml:space="preserve">
     <value>충돌함</value>
   </data>
-  <data name="URLHandlerNotListening" xml:space="preserve">
-    <value>이 CKAN 창은 ckan:// URL을 수신하지 않습니다.
-다른 CKAN 창이 이미 처리하고 있을 수 있습니다.
-자세한 내용은 로그를 확인하세요.</value>
-  </data>
 </root>

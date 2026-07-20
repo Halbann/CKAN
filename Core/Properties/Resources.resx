@@ -386,7 +386,4 @@ Free up space on that device or change your settings to use another location.
   <data name="RelationshipTypeSuggests" xml:space="preserve"><value>Suggests</value></data>
   <data name="RelationshipTypeSupports" xml:space="preserve"><value>Supports</value></data>
   <data name="RelationshipTypeConflicts" xml:space="preserve"><value>Conflicts</value></data>
-  <data name="URLHandlerNotListening" xml:space="preserve"><value>This CKAN window will not receive ckan:// URLs.
-Another CKAN window is probably already handling them.
-Check the log for details.</value></data>
 </root>

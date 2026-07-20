@@ -156,14 +156,7 @@ namespace CKAN.GUI
 
             WireProtocolRouter();
 
-            log.Info("Starting URL pipe server");
-            if (!URLPipe.StartServer())
-            {
-                MessageBox.Show(CKAN.Properties.Resources.URLHandlerNotListening,
-                                "ckan:// handler",
-                                MessageBoxButtons.OK,
-                                MessageBoxIcon.Information);
-            }
+            URLPipe.StartServer();
         }
 
         protected override void OnLoad(EventArgs e)
