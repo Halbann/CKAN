@@ -58,12 +58,12 @@ namespace CKAN.GUI
         /// A constructor just initializes the object, it doesn't ask the user questions.
         /// That's the job of OnLoad or OnShown.
         /// </summary>
-        /// <param name="cmdlineArgs">The strings from the command line that launched us</param>
         /// <param name="mgr">Game instance manager created by the cmdline handler</param>
         /// <param name="userAgent">User agent to use for web queries</param>
-        public Main(string[]             cmdlineArgs,
-                    GameInstanceManager? mgr,
-                    string?              userAgent)
+        /// <param name="url">ckan:// URL passed at launch, handled once the mod list is up</param>
+        public Main(GameInstanceManager? mgr,
+                    string?              userAgent,
+                    string?              url = null)
         {
             log.Info("Starting the GUI");
 
@@ -158,11 +158,7 @@ namespace CKAN.GUI
             ActiveModInfo = null;
 
             WireProtocolRouter();
-            var initialArg = cmdlineArgs.ElementAtOrDefault(1);
-            if (initialArg != null && (initialArg.StartsWith("ckan://") || initialArg.StartsWith("//")))
-            {
-                pendingUrl = initialArg;
-            }
+            pendingUrl = url;
 
             log.Info("Starting URL pipe server");
             if (!URLPipe.StartServer())
@@ -194,7 +190,7 @@ namespace CKAN.GUI
             Size = configuration.WindowSize;
             WindowState = configuration.IsWindowMaximised ? FormWindowState.Maximized : FormWindowState.Normal;
 
-            URLHandlers.RegisterURLHandler();
+            URLHandlers.RegisterURLHandler("gui");
 
             Util.Invoke(this, () => Text = $"CKAN {Meta.GetVersion()}");
 

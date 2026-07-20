@@ -73,20 +73,17 @@ namespace CKAN.CmdLine
             }
             log.Info("CKAN started.");
 
-            // On Linux, a ckan:// click launches `ckan gui <url>`. If a GUI is already running,
-            // hand the URL to it over the pipe instead of starting a second one.
-            // On Windows, a ckan:// click launches a dedicated URL handler exe.
-            // todo: mac explanation
-            if (args.Length > 1 && args[0] == "gui" && args[1].StartsWith("ckan://"))
+            // Try to hand --url to a running instance over the pipe before loading anything.
+            // no-handoff: skip the pipe because the caller already checked (Windows) (saves 50 ms).            
+            var urlIndex = Array.IndexOf(args, "--url");
+            if (urlIndex >= 0 && urlIndex + 1 < args.Length && !args.Contains("--no-handoff"))
             {
-                log.Info("URL handler launch detected. Trying to hand off to a running instance");
-                if (URLPipe.TrySend(args[1]))
+                if (URLPipe.TrySend(args[urlIndex + 1]))
                 {
-                    log.Info("URL handed off. Exiting");
-                    return 0;
+                    log.Info("URL handed off to a running instance. Exiting");
+                    return Exit.OK;
                 }
-
-                log.Info("No running instance found. Proceeding to launch");
+                log.Info("No running instance found. Launching");
             }
 
             // Force-allow TLS 1.2 for HTTPS URLs, because GitHub requires it.
@@ -240,7 +237,7 @@ namespace CKAN.CmdLine
                         #if NET6_0_OR_GREATER
                             Platform.IsWindows ?
                         #endif
-                            Gui(manager, opts, args)
+                            Gui(manager, opts)
                         #if NET6_0_OR_GREATER
                             : Exit.ERROR
                         #endif
@@ -308,16 +305,14 @@ namespace CKAN.CmdLine
         [SupportedOSPlatform("windows")]
         #endif
         [ExcludeFromCodeCoverage]
-        private static int Gui(GameInstanceManager manager, GuiOptions options, string[] args)
+        private static int Gui(GameInstanceManager manager, GuiOptions options)
         {
             // TODO: Sometimes when the GUI exits, we get a System.ArgumentException,
             // but trying to catch it here doesn't seem to help. Dunno why.
 
-            // GUI expects its first param to be an identifier, don't confuse it
-            GUI.GUI.Main_(args.Except(new string[] {"--verbose", "--debug", "--show-console", "--asroot"})
-                              .ToArray(),
-                          options.NetUserAgent, manager,
-                          options.ShowConsole || options.Debug || options.Verbose);
+            GUI.GUI.Main_(options.NetUserAgent, manager,
+                          options.ShowConsole || options.Debug || options.Verbose,
+                          options.Url);
 
             return Exit.OK;
         }
@@ -330,7 +325,7 @@ namespace CKAN.CmdLine
             LogManager.GetRepository().Threshold = Level.Warn;
             return ConsoleUI.ConsoleUI.Main_(manager,
                 opts.Theme ?? Environment.GetEnvironmentVariable("CKAN_CONSOLEUI_THEME") ?? "default",
-                opts.NetUserAgent, opts.Debug);
+                opts.NetUserAgent, opts.Url, opts.Debug);
         }
 
         private static int Version(IUser user)

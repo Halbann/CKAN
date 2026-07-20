@@ -43,17 +43,19 @@ namespace CKAN.IO
             }
         }
 
-        public static void RegisterURLHandler()
+        // uiCommand is the verb of the calling UI (gui or consoleui). A cold ckan:// click
+        // launches that UI, so whichever one registered last is the one links open.
+        public static void RegisterURLHandler(string uiCommand)
         {
             try
             {
                 if (Platform.IsUnix)
                 {
-                    RegisterURLHandler_Linux();
+                    RegisterURLHandler_Linux(uiCommand);
                 }
                 else if (Platform.IsWindows)
                 {
-                    RegisterURLHandler_Win32();
+                    RegisterURLHandler_Win32(uiCommand);
                 }
 
                 // macOS URL handler is defined in CKAN.app info.plist.
@@ -78,7 +80,7 @@ namespace CKAN.IO
         #if NET5_0_OR_GREATER
         [SupportedOSPlatform("windows")]
         #endif
-        private static void RegisterURLHandler_Win32()
+        private static void RegisterURLHandler_Win32(string uiCommand)
         {
             log.InfoFormat("Adding URL handler to registry");
 
@@ -88,7 +90,8 @@ namespace CKAN.IO
                 return;
             }
 
-            var urlCmd = $"\"{stub}\" \"{PathToRunningExe()}\" \"%1\"";
+            // `ckan-urlhandler.exe <url> <path to ckan.exe> <verb>`
+            var urlCmd = $"\"{stub}\" \"%1\" \"{PathToRunningExe()}\" {uiCommand}";
 
             // Register per user so no admin rights are needed.
             // Windows automatically gives this precedence over the old handler we used to register for all users.
@@ -141,12 +144,15 @@ namespace CKAN.IO
         #if NET5_0_OR_GREATER
         [SupportedOSPlatform("linux")]
         #endif
-        private static void RegisterURLHandler_Linux()
+        private static void RegisterURLHandler_Linux(string uiCommand)
         {
             log.InfoFormat("Trying to register URL handler");
 
             var handlerPath = Path.Combine(ApplicationsPath, LinuxHandlerFilename);
-            var desiredExec = "mono \"" + PathToRunningExe() + "\" gui %u";
+            var desiredExec = "mono \"" + PathToRunningExe() + "\" " + uiCommand + " --url %u";
+
+            // The console UI needs a terminal window to draw in. The GUI hosts its own.
+            var terminal = uiCommand == "consoleui" ? "Terminal=true" : "Terminal=false";
 
             var desiredContent = new StringBuilder()
                 .AppendLine("[Desktop Entry]")
@@ -156,7 +162,7 @@ namespace CKAN.IO
                 .AppendLine("Icon=ckan")
                 .AppendLine("StartupNotify=true")
                 .AppendLine("NoDisplay=true")
-                .AppendLine("Terminal=false")
+                .AppendLine(terminal)
                 .AppendLine("Categories=Utility")
                 .AppendLine("MimeType=x-scheme-handler/ckan")
                 .AppendLine("Name=CKAN Launcher")

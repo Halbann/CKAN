@@ -11,8 +11,8 @@ using Microsoft.Win32.SafeHandles;
 // popup on launch. Doing that every time a ckan URL opens is ugly and looks dodgy.
 
 // This stub is a WinExe instead, so no popup.
-// Invoked via reg as `ckan-urlhandler.exe <path to ckan.exe> <url>` which sends
-// the URL to a running CKAN over the pipe and starts CKAN if nothing is listening.
+// Called via reg as `ckan-urlhandler.exe <url> <path to ckan.exe> <verb>`. It sends the url to the
+// running CKAN over the pipe, or starts CKAN with `<verb> --url <url> --no-handoff`.
 
 // Must not reference anything outside the BCL so that it can be compiled
 // with Native AOT for packing into ckan-windows.exe (needed to avoid substantially larger binary).
@@ -27,19 +27,21 @@ namespace CKAN.URLHandler
 
         public static int Main(string[] args)
         {
-            // Call should only ever come from URL handler reg entry, so the args are known ahead of time.
+            // Call should only ever come from the URL handler reg entry, so the args are known ahead of time:
+            // <url> <path to ckan.exe> <verb> [any N ckan args].
+            // The verb is whichever UI registered last.
 
-            if (args.Length < 2
-                || string.IsNullOrWhiteSpace(args[0])
-                || string.IsNullOrWhiteSpace(args[1]))
+            if (args.Length < 3 || string.IsNullOrWhiteSpace(args[0]) || string.IsNullOrWhiteSpace(args[1]))
             {
                 return 1;
             }
 
-            var ckanExe = args[0];
-            var url = args[1];
+            var url = args[0];
+            var ckanExe = args[1];
+            var launchArgs = new string[args.Length - 2];
+            Array.Copy(args, 2, launchArgs, 0, launchArgs.Length);
 
-            return (TrySendToRunningInstance(url) || LaunchCKAN(ckanExe, url)) ? 0 : 1;
+            return (TrySendToRunningInstance(url) || LaunchCKAN(ckanExe, launchArgs, url)) ? 0 : 1;
         }
 
         // Duplicates URLPipe.TrySend because this project can't reference Core.
@@ -69,16 +71,16 @@ namespace CKAN.URLHandler
             }
         }
               
-        private static bool LaunchCKAN(string ckanExe, string url)
+        private static bool LaunchCKAN(string ckanExe, string[] launchArgs, string url)
         {
             try
             {
                 var proc = Process.Start(new ProcessStartInfo
                 {
                     FileName = ckanExe,
-                    Arguments = $"gui \"{url}\"",
+                    Arguments = $"{string.Join(" ", launchArgs)} --url \"{url}\" --no-handoff", // no-handoff: skip double TrySend.
                     UseShellExecute = false,
-                    CreateNoWindow = true, // Prevents a console popup. GUI window is unaffected.
+                    CreateNoWindow = launchArgs[0] == "gui",
                 });
 
                 // Same foreground rights handoff as the pipe path.

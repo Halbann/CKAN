@@ -12,14 +12,22 @@ namespace CKAN.ConsoleUI {
 
         private static readonly ILog urlLog = LogManager.GetLogger("URL");
 
+        // A ckan:// URL passed at launch waits here until the handlers below are subscribed.
+        internal string? PendingUrl;
+
         /// <summary>
         /// Run the screen with the ckan:// handlers subscribed.
-        /// </summary>  
+        /// </summary>
         public override void Run(Action? process = null)
         {
             ProtocolRouter.OnFocus += HandleProtocolFocus;
             ProtocolRouter.OnSearch += HandleProtocolSearch;
             ProtocolRouter.OnInstall += HandleProtocolInstall;
+
+            if (PendingUrl != null)
+            {
+                ProtocolRouter.Handle(PendingUrl);
+            }
 
             try
             {

@@ -28,6 +28,7 @@ namespace CKAN.ConsoleUI
         /// <param name="manager">Game instance manager object potentially initialized by command line flags</param>
         /// <param name="themeName">'default' to use default theme, 'dark' to use dark theme</param>
         /// <param name="userAgent">HTTP useragent string to use</param>
+        /// <param name="url">ckan:// URL passed at launch, handled once the mod list is up</param>
         /// <param name="debug">True if debug options should be available, false otherwise</param>
         /// <returns>
         /// Process exit status
@@ -35,11 +36,12 @@ namespace CKAN.ConsoleUI
         public static int Main_(GameInstanceManager? manager,
                                 string?              themeName,
                                 string?              userAgent,
+                                string?              url   = null,
                                 bool                 debug = false)
         {
             Logging.Initialize();
 
-            new ConsoleCKAN(manager, themeName, userAgent, debug);
+            new ConsoleCKAN(manager, themeName, userAgent, url, debug);
 
             // Tell RegistryManager not to throw Dispose-related exceptions at exit
             RegistryManager.DisposeAll();

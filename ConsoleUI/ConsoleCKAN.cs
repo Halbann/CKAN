@@ -22,6 +22,7 @@ namespace CKAN.ConsoleUI {
         public ConsoleCKAN(GameInstanceManager? mgr,
                            string?              themeName,
                            string?              userAgent,
+                           string?              url,
                            bool                 debug)
         {
             if (ConsoleTheme.Themes.TryGetValue(themeName ?? "default", out ConsoleTheme? theme))
@@ -40,7 +41,7 @@ namespace CKAN.ConsoleUI {
                                                                          ServiceLocator.Container.Resolve<IConfiguration>());
 
                 // Register CKAN as the ckan:// URL handler.
-                URLHandlers.RegisterURLHandler();
+                URLHandlers.RegisterURLHandler("consoleui");
 
                 // Listen for ckan:// URLs from other CKAN processes.
                 // URLs arriving before ModListScreen subscribes are dropped.
@@ -66,7 +67,10 @@ namespace CKAN.ConsoleUI {
                                           RegistryManager.Instance(manager.CurrentInstance, repoData),
                                           userAgent,
                                           manager.CurrentInstance.Game,
-                                          debug).Run();
+                                          debug)
+                        {
+                            PendingUrl = url,
+                        }.Run();
                     }
 
                     new ExitScreen().Run(theme);

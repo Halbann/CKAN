@@ -24,13 +24,13 @@ namespace CKAN.GUI
         [STAThread]
         public static void Main(string[] args)
         {
-            Main_(args, null);
+            Main_(null);
         }
 
-        public static void Main_(string[]             args,
-                                 string?              userAgent,
+        public static void Main_(string?              userAgent,
                                  GameInstanceManager? manager = null,
-                                 bool                 showConsole = false)
+                                 bool                 showConsole = false,
+                                 string?              url = null)
         {
             Logging.Initialize();
 
@@ -58,7 +58,7 @@ namespace CKAN.GUI
                 Application.SetColorMode(SystemColorMode.System);
             }
             #endif
-            var main = new Main(args, manager, userAgent);
+            var main = new Main(manager, userAgent, url);
             if (Platform.IsWindows && Util.DarkMode)
             {
                 int val = 1;
