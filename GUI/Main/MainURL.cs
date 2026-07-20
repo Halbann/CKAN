@@ -105,10 +105,19 @@ namespace CKAN.GUI
                                 }
                             }
 
-                            // If still null, get latest.
-                            module ??= reg.LatestAvailable(modId,
-                                                           CurrentInstance.StabilityToleranceConfig,
-                                                           CurrentInstance.VersionCriteria());
+                            // If still null, get latest. Throws rather than returning null
+                            // when the identifier isn't in the registry at all.
+                            try
+                            {
+                                module ??= reg.LatestAvailable(modId,
+                                                               CurrentInstance.StabilityToleranceConfig,
+                                                               CurrentInstance.VersionCriteria());
+                            }
+                            catch (ModuleNotFoundKraken)
+                            {
+                                module = null;
+                            }
+
                             if (module == null)
                             {
                                 urlLog.WarnFormat("Mod not found in registry: {0}", modId);
