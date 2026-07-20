@@ -75,25 +75,25 @@ namespace CKAN.ConsoleUI {
                                     : ProtocolRouter.CanonicalIdentifier(modId, allMods.ConvertAll(m => m.identifier))
                                       ?? modId;
 
+                    // The id and version came from a URL, so treat any failure as not found.
                     CkanModule? module = null;
-
-                    // If version provided, search for the versioned mod.
-                    if (version != null) {
-                        module = registry.GetModuleByVersion(ident, version);
-                        if (module == null) {
-                            urlLog.WarnFormat("Version {0} of {1} not in registry. Using latest compatible.",
-                                              version, modId);
-                        }
-                    }
-
-                    // If still null, find latest. Throws rather than returning null
-                    // when the identifier isn't in the registry at all.
                     try {
+                        // Try to get versioned module.
+                        if (version != null) {
+                            module = registry.GetModuleByVersion(ident, version);
+                            if (module == null) {
+                                urlLog.WarnFormat("Version {0} of {1} not in registry. Using latest compatible.",
+                                                  version, modId);
+                            }
+                        }
+
+                        // Default to latest.
                         module ??= registry.LatestAvailable(ident,
                                                             manager.CurrentInstance.StabilityToleranceConfig,
                                                             manager.CurrentInstance.VersionCriteria());
-                    } catch (ModuleNotFoundKraken) {
-                        module = null;
+                    } catch (Exception ex) {
+                        urlLog.WarnFormat("Could not resolve {0}: {1}", modId, ex.Message);
+                        continue;
                     }
 
                     if (module == null) {

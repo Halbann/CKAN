@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
@@ -83,23 +84,34 @@ namespace CKAN.GUI
 
             Util.Invoke(this, () =>
             {
-                if (CurrentInstance != null)
+                if (CurrentInstance == null)
                 {
-                    var reg = RegistryManager.Instance(CurrentInstance, repoData).registry;
-                    var rows = ManageMods.MainModList?.full_list_of_mod_rows;
-                    var marked = false;
+                    return;
+                }
 
-                    // Freeze so the changeset recomputes once at the end instead of once per mod.
-                    ManageMods.WithFrozenChangeset(() =>
+                var rows = ManageMods.MainModList?.full_list_of_mod_rows;
+                if (rows == null)
+                {
+                    urlLog.Warn("Mod list not loaded. Cannot mark anything for install");
+                    return;
+                }
+
+                var reg = RegistryManager.Instance(CurrentInstance, repoData).registry;
+                var marked = false;
+
+                // Freeze so the changeset recomputes once at the end instead of once per mod.
+                ManageMods.WithFrozenChangeset(() =>
+                {
+                    foreach (var (modId, version) in mods)
                     {
-                        foreach (var (modId, version) in mods)
-                        {
-                            var ident = rows == null
-                                            ? modId
-                                            : ProtocolRouter.CanonicalIdentifier(modId, rows.Keys) ?? modId;
+                        // Resolving against row keys rather than the registry matches the row lookup further down.
+                        var ident = ProtocolRouter.CanonicalIdentifier(modId, rows.Keys) ?? modId;
 
-                            // Resolve the identifier and optional pinned version to a module in the registry.
-                            CkanModule? module = null;
+                        // The id and version came from a URL, so treat any failure as not found.
+                        CkanModule? module = null;
+                        try
+                        {
+                            // Try to get versioned module.
                             if (version != null)
                             {
                                 module = reg.GetModuleByVersion(ident, version);
@@ -110,49 +122,45 @@ namespace CKAN.GUI
                                 }
                             }
 
-                            // If still null, get latest. Throws rather than returning null
-                            // when the identifier isn't in the registry at all.
-                            try
-                            {
-                                module ??= reg.LatestAvailable(ident,
-                                                               CurrentInstance.StabilityToleranceConfig,
-                                                               CurrentInstance.VersionCriteria());
-                            }
-                            catch (ModuleNotFoundKraken)
-                            {
-                                module = null;
-                            }
-
-                            if (module == null)
-                            {
-                                urlLog.WarnFormat("Mod not found in registry: {0}", modId);
-                                continue;
-                            }
-
-                            // Setting SelectedMod is the same thing as when the user ticks an install checkbox.
-                            // Therefore URL clicks accumulate with anything already marked and the user can remove mods normally.
-                            if (rows != null
-                                && rows.TryGetValue(ident, out var row)
-                                && row.Tag is GUIMod gmod)
-                            {
-                                gmod.SelectedMod = module;
-                                marked = true;
-                            }
-                            else
-                            {
-                                urlLog.WarnFormat("No mod list row for {0}. Cannot mark for install", modId);
-                            }
+                            // Default to latest.
+                            module ??= reg.LatestAvailable(ident,
+                                                           CurrentInstance.StabilityToleranceConfig,
+                                                           CurrentInstance.VersionCriteria());
                         }
-                    });
+                        catch (Exception ex)
+                        {
+                            urlLog.WarnFormat("Could not resolve {0}: {1}", modId, ex.Message);
+                            continue;
+                        }
 
-                    // Take user to changeset screen.
-                    if (marked)
-                    {
-                        tabController.ShowTab(ChangesetTabPage.Name, 1);
+                        if (module == null)
+                        {
+                            urlLog.WarnFormat("Mod not found in registry: {0}", modId);
+                            continue;
+                        }
+
+                        // Setting SelectedMod is the same thing as when the user ticks an install checkbox.
+                        // Therefore URL clicks accumulate with anything already marked and the user can remove mods normally.
+                        if (rows.TryGetValue(ident, out var row)
+                            && row.Tag is GUIMod gmod)
+                        {
+                            gmod.SelectedMod = module;
+                            marked = true;
+                        }
+                        else
+                        {
+                            urlLog.WarnFormat("No mod list row for {0}. Cannot mark for install", modId);
+                        }
                     }
+                });
 
-                    RaiseToForeground();
+                // Take user to changeset screen.
+                if (marked)
+                {
+                    tabController.ShowTab(ChangesetTabPage.Name, 1);
                 }
+
+                RaiseToForeground();
             });
         }
     }
