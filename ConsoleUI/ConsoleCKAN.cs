@@ -22,7 +22,6 @@ namespace CKAN.ConsoleUI {
         public ConsoleCKAN(GameInstanceManager? mgr,
                            string?              themeName,
                            string?              userAgent,
-                           string?              url,
                            bool                 debug)
         {
             if (ConsoleTheme.Themes.TryGetValue(themeName ?? "default", out ConsoleTheme? theme))
@@ -67,10 +66,7 @@ namespace CKAN.ConsoleUI {
                                           RegistryManager.Instance(manager.CurrentInstance, repoData),
                                           userAgent,
                                           manager.CurrentInstance.Game,
-                                          debug)
-                        {
-                            PendingUrl = url,
-                        }.Run();
+                                          debug).Run();
                     }
 
                     new ExitScreen().Run(theme);

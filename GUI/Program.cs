@@ -22,15 +22,14 @@ namespace CKAN.GUI
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        public static void Main(string[] args)
+        public static void Main()
         {
             Main_(null);
         }
 
         public static void Main_(string?              userAgent,
                                  GameInstanceManager? manager = null,
-                                 bool                 showConsole = false,
-                                 string?              url = null)
+                                 bool                 showConsole = false)
         {
             Logging.Initialize();
 
@@ -58,7 +57,7 @@ namespace CKAN.GUI
                 Application.SetColorMode(SystemColorMode.System);
             }
             #endif
-            var main = new Main(manager, userAgent, url);
+            var main = new Main(manager, userAgent);
             if (Platform.IsWindows && Util.DarkMode)
             {
                 int val = 1;

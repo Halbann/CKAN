@@ -39,7 +39,6 @@ namespace CKAN.GUI
         private readonly string? userAgent;
         private readonly AutoUpdate updater;
         public bool Waiting => Wait.Busy;
-        private string? pendingUrl;
 
         // Stuff we set when the game instance changes
         public GUIConfiguration? configuration;
@@ -60,10 +59,8 @@ namespace CKAN.GUI
         /// </summary>
         /// <param name="mgr">Game instance manager created by the cmdline handler</param>
         /// <param name="userAgent">User agent to use for web queries</param>
-        /// <param name="url">ckan:// URL passed at launch, handled once the mod list is up</param>
         public Main(GameInstanceManager? mgr,
-                    string?              userAgent,
-                    string?              url = null)
+                    string?              userAgent)
         {
             log.Info("Starting the GUI");
 
@@ -158,7 +155,6 @@ namespace CKAN.GUI
             ActiveModInfo = null;
 
             WireProtocolRouter();
-            pendingUrl = url;
 
             log.Info("Starting URL pipe server");
             if (!URLPipe.StartServer())
@@ -1060,11 +1056,7 @@ namespace CKAN.GUI
                             EnableMainWindow();
                             SetupDefaultSearch();
 
-                            if (pendingUrl != null)
-                            {
-                                ProtocolRouter.Handle(pendingUrl);
-                                pendingUrl = null;
-                            }
+                            ProtocolRouter.HandlePendingLaunchUrl();
 
                             break;
                     }

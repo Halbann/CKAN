@@ -169,6 +169,12 @@ namespace CKAN.CmdLine
             // Process commandline options.
             CommonOptions options = (CommonOptions)cmdline.options;
             options.Merge(opts);
+            
+            if (options is UIOptions uiOptions)
+            {
+                ProtocolRouter.PendingLaunchUrl = uiOptions.Url;
+            }
+
             if (manager == null)
             {
                 manager = new GameInstanceManager(user, ServiceLocator.Container.Resolve<IConfiguration>());
@@ -311,8 +317,7 @@ namespace CKAN.CmdLine
             // but trying to catch it here doesn't seem to help. Dunno why.
 
             GUI.GUI.Main_(options.NetUserAgent, manager,
-                          options.ShowConsole || options.Debug || options.Verbose,
-                          options.Url);
+                          options.ShowConsole || options.Debug || options.Verbose);
 
             return Exit.OK;
         }
@@ -325,7 +330,7 @@ namespace CKAN.CmdLine
             LogManager.GetRepository().Threshold = Level.Warn;
             return ConsoleUI.ConsoleUI.Main_(manager,
                 opts.Theme ?? Environment.GetEnvironmentVariable("CKAN_CONSOLEUI_THEME") ?? "default",
-                opts.NetUserAgent, opts.Url, opts.Debug);
+                opts.NetUserAgent, opts.Debug);
         }
 
         private static int Version(IUser user)

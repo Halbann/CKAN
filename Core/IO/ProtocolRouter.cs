@@ -11,6 +11,19 @@ namespace CKAN.IO
         public static event Action<string>? OnSearch;
         public static event Action<List<(string Mod, string? Version)>>? OnInstall;
 
+        // A ckan:// URL from --url waits here until a UI has subscribed above.
+        public static string? PendingLaunchUrl;
+
+        // Call once subscribed. Handles the --url URL if there was one.
+        public static void HandlePendingLaunchUrl()
+        {
+            if (PendingLaunchUrl != null)
+            {
+                Handle(PendingLaunchUrl);
+                PendingLaunchUrl = null;
+            }
+        }
+
         public static void Handle(string rawUrl)
         {
             if (string.IsNullOrWhiteSpace(rawUrl))
