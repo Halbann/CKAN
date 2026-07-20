@@ -19,6 +19,7 @@ namespace Tests.Core.IO
             focused.Clear();
             searched.Clear();
             installed.Clear();
+            ProtocolRouter.PendingLaunchUrl = null;
             ProtocolRouter.OnFocus += focused.Add;
             ProtocolRouter.OnSearch += searched.Add;
             ProtocolRouter.OnInstall += installed.Add;
@@ -249,6 +250,29 @@ namespace Tests.Core.IO
             ProtocolRouter.Handle(input);
 
             CollectionAssert.AreEqual(new[] { "JNSQ" }, focused);
+        }
+
+        [Test]
+        public void HandlePendingLaunchUrl_WithUrl_HandlesItOnce()
+        {
+            ProtocolRouter.PendingLaunchUrl = "ckan://focus?mod=JNSQ";
+
+            // Screen can be re-entered but the URL must not be handled again.
+            ProtocolRouter.HandlePendingLaunchUrl();
+            ProtocolRouter.HandlePendingLaunchUrl();
+
+            CollectionAssert.AreEqual(new[] { "JNSQ" }, focused);
+            Assert.IsNull(ProtocolRouter.PendingLaunchUrl);
+        }
+
+        [Test]
+        public void HandlePendingLaunchUrl_WithoutUrl_NoOp()
+        {
+            ProtocolRouter.HandlePendingLaunchUrl();
+
+            Assert.IsEmpty(focused);
+            Assert.IsEmpty(searched);
+            Assert.IsEmpty(installed);
         }
     }
 }
