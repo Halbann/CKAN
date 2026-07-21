@@ -6,7 +6,9 @@ namespace CKAN.ConsoleUI.Toolkit {
 
     /// <summary>
     /// The console UI's input source.
-    /// A background thread blocks in Console.ReadKey and queues each keystroke.
+    /// A background thread blocks in Console.ReadKey and queues each keystroke 
+    /// (that thread can never be stopped because Console.ReadKey can't be interrupted).
+    /// 
     /// Other threads can post actions onto the same queue to run them on the UI thread.
     /// NextKey runs posted actions inline while waiting for the next keystroke.
     ///

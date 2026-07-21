@@ -56,14 +56,20 @@ namespace CKAN.CmdLine
                     {
                         // Parse input as if it was a normal command line,
                         // but with a persistent GameInstanceManager object.
-                        int cmdExitCode = MainClass.Execute(manager, opts,
-                                                            ParseTextField(command), user);
+                        var cmdArgs = ParseTextField(command);
+                        int cmdExitCode = MainClass.Execute(manager, opts, cmdArgs, user);
                         // Clear the command if no exception was thrown
                         if (headless && cmdExitCode != Exit.OK)
                         {
                             // Pass failure codes to calling process in headless mode
                             // (in interactive mode the user can see the error and try again)
                             return cmdExitCode;
+                        }
+                        // The console UI's key reader thread can't be stopped.
+                        // It would fight this loop for keystrokes.
+                        if (cmdArgs.FirstOrDefault() == "consoleui")
+                        {
+                            done = true;
                         }
                     }
                 }
