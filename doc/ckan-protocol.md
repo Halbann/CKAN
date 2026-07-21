@@ -1,13 +1,11 @@
 # CKAN's URL protocol
 
 CKAN handles URLs that begin with `ckan://`. A link can focus a mod, search, or start an install.
-If CKAN is running already then the current window will be used, otherwise a new window will be opened.
-The GUI and the console UI both handle URLs.
+If CKAN is running already then the current window will pull focus and handle the link, otherwise a new 
+window will be opened. The GUI and the console UI both handle URLs. If CKAN isn't already running when 
+you click a link, then it launches whichever UI was last used.
 
-This works on Windows and Linux. Adding macOS support is a bit tricker and not working yet.
-
-There's currently no special handling for different games; it just tries to use the current instance,
-even if the mod in the URL is for a different game.
+This works on Windows and Linux. macOS is a bit trickier and therefore not supported yet.
 
 The name you use for a mod in a URL is called its Identifier. You can find this in the mod info panel in the GUI.
 Not only does an identifier not contain any spaces, but it can sometimes differ significantly from the mod title,
@@ -20,6 +18,9 @@ Some examples:
 - 'Scatterer Default Config' -> `Scatterer-config`
 
 For convenience, identifiers in URLs can be case-insensitive. So `realsolarsystem` finds the same mod as `RealSolarSystem`.
+
+There's currently no special handling for different games; it just tries to use the current instance, 
+even if the mod in the URL is for a different game.
 
 ## Operations
 
@@ -69,6 +70,14 @@ If that version isn't in the registry, then the latest compatible version is use
 
 A plain link works anywhere HTML does:
 
-    <a href="ckan://install?mod=Parallax">Install Parallax</a>
+    <a href="ckan://install?mod=Stapler">Install Stapler</a>
 
-Browsers usually ask permission on the first click.
+Browsers should all ask permission on the first click. This will say `ckan-urlhandler.exe` on Windows.
+
+## Command Line
+
+URL operations can be used from the command line with the --url option like so:
+
+    ckan.exe gui --url install?mod=SterlingSystemsEngines
+
+    ckan.exe consoleui --url search?q=%40JadeOfMaar
