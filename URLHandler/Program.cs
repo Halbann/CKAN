@@ -70,7 +70,7 @@ namespace CKAN.URLHandler
                 return false;
             }
         }
-              
+
         private static bool LaunchCKAN(string ckanExe, string[] launchArgs, string url)
         {
             try

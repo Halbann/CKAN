@@ -74,7 +74,7 @@ namespace CKAN.CmdLine
             log.Info("CKAN started.");
 
             // Try to hand --url to a running instance over the pipe before loading anything.
-            // no-handoff: skip the pipe because the caller already checked (Windows) (saves 50 ms).            
+            // no-handoff: skip the pipe because the caller already checked (Windows) (saves 50 ms).
             var urlIndex = Array.IndexOf(args, "--url");
             if (urlIndex >= 0 && urlIndex + 1 < args.Length && !args.Contains("--no-handoff"))
             {
@@ -178,7 +178,7 @@ namespace CKAN.CmdLine
             // Process commandline options.
             CommonOptions options = (CommonOptions)cmdline.options;
             options.Merge(opts);
-            
+
             if (options is UIOptions uiOptions)
             {
                 ProtocolRouter.PendingLaunchUrl = uiOptions.Url;

@@ -9,7 +9,7 @@ namespace CKAN.ConsoleUI.Toolkit {
     /// A background thread blocks in Console.ReadKey and queues each keystroke.
     /// Other threads can post actions onto the same queue to run them on the UI thread.
     /// NextKey runs posted actions inline while waiting for the next keystroke.
-    /// 
+    ///
     /// Originally added so that we can respond to the URL handler pipe while waiting on input.
     /// </summary>
     public static class ConsoleInput {
