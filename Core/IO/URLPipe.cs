@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.IO.Pipes;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -120,6 +119,7 @@ namespace CKAN.IO
         public static bool TrySend(string url, int timeoutMs = 50)
         {
             using var client = new NamedPipeClientStream(".", Name, PipeDirection.Out);
+
             try
             {
                 client.Connect(timeoutMs);
@@ -128,11 +128,7 @@ namespace CKAN.IO
 
                 return true;
             }
-            catch (TimeoutException)
-            {
-                return false;
-            }
-            catch (IOException)
+            catch
             {
                 return false;
             }
