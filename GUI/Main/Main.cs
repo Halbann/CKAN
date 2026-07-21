@@ -156,7 +156,8 @@ namespace CKAN.GUI
 
             WireProtocolRouter();
 
-            URLPipe.StartServer();
+            // URL handlers can't be invoked on the UI thread until the window handle is created.
+            HandleCreated += (sender, e) => URLPipe.StartServer();
         }
 
         protected override void OnLoad(EventArgs e)
