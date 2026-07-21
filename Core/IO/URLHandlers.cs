@@ -91,8 +91,8 @@ namespace CKAN.IO
                 return;
             }
 
-            // `ckan-urlhandler.exe <url> <path to ckan.exe> <verb>`
-            var urlCmd = $"\"{stub}\" \"%1\" \"{PathToRunningExe()}\" {uiCommand}";
+            // `ckan-urlhandler.exe <path to ckan.exe> <verb> <url>`
+            var urlCmd = $"\"{stub}\" \"{PathToRunningExe()}\" {uiCommand} \"%1\"";
 
             // Register per user so no admin rights are needed.
             // Windows automatically gives this precedence over the old handler we used to register for all users.
