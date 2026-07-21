@@ -59,7 +59,7 @@ namespace CKAN.IO
                     RegisterURLHandler_Win32(uiCommand);
                 }
 
-                // macOS URL handler is defined in CKAN.app info.plist.
+                // todo: macOS URL handler is defined CKAN.app info.plist but commented out until we can receive the apple event.
             }
             catch (Exception ex)
             {
