@@ -22,6 +22,8 @@ For convenience, identifiers in URLs can be case-insensitive. So `realsolarsyste
 There's currently no special handling for different games; it just tries to use the current instance,
 even if the mod in the URL is for a different game.
 
+Links are ignored while CKAN is busy, for example during an install, or while a screen is open that you have to close first.
+
 ## Operations
 
 ### Focus

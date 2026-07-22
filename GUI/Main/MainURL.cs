@@ -33,6 +33,25 @@ namespace CKAN.GUI
             ProtocolRouter.OnInstall -= HandleProtocolInstall;
         }
 
+        private static bool ModalDialogOpen()
+            => Application.OpenForms.OfType<Form>().Any(f => f.Modal);
+
+        private void InvokeIfReady(Action action)
+        {
+            Util.Invoke(this, () =>
+            {
+                if (Waiting || ManageMods.MainModList == null || tabController.TabLocked || ModalDialogOpen())
+                {
+                    urlLog.Warn("Ignoring URL because CKAN is busy");
+                    RaiseToForeground();
+                }
+                else
+                {
+                    action();
+                }
+            });
+        }
+
         // Bring CKAN to the foreground after handling a ckan:// URL.
         // The url handler stub grants us its foreground rights first. Without them Windows demotes this to a taskbar flash.
         private void RaiseToForeground()
@@ -49,7 +68,7 @@ namespace CKAN.GUI
         {
             urlLog.DebugFormat("Focus requested: {0}", identifier);
 
-            Util.Invoke(this, () =>
+            InvokeIfReady(() =>
             {
                 // Clear any search that might be hiding the mod.
                 ManageMods.SetSearches(new List<ModSearch>());
@@ -63,7 +82,7 @@ namespace CKAN.GUI
         {
             urlLog.DebugFormat("Search requested: {0}", query);
 
-            Util.Invoke(this, () =>
+            InvokeIfReady(() =>
             {
                 if (CurrentInstance != null)
                 {
@@ -82,7 +101,7 @@ namespace CKAN.GUI
         {
             urlLog.DebugFormat("Install requested: {0}", string.Join(", ", mods.Select(m => m.Mod)));
 
-            Util.Invoke(this, () =>
+            InvokeIfReady(() =>
             {
                 if (CurrentInstance == null)
                 {

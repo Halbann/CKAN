@@ -15,7 +15,7 @@ namespace CKAN.ConsoleUI {
         /// <summary>
         /// Run the screen with the ckan:// handlers subscribed.
         /// </summary>
-        public override void Run(Action? process = null)
+        protected override void RunScreen(Action? process)
         {
             ProtocolRouter.OnFocus += HandleProtocolFocus;
             ProtocolRouter.OnSearch += HandleProtocolSearch;
@@ -23,15 +23,22 @@ namespace CKAN.ConsoleUI {
 
             ProtocolRouter.HandlePendingLaunchUrl();
 
-            try
-            {
-                base.Run(process);
+            try {
+                base.RunScreen(process);
             }
-            finally
-            {
+            finally {
                 ProtocolRouter.OnFocus -= HandleProtocolFocus;
                 ProtocolRouter.OnSearch -= HandleProtocolSearch;
                 ProtocolRouter.OnInstall -= HandleProtocolInstall;
+            }
+        }
+
+        private void PostToModList(Action action)
+        {
+            if (Current == this) {
+                ConsoleInput.Post(action);
+            } else {
+                urlLog.Warn("Ignoring URL because another screen is running");
             }
         }
 
@@ -39,8 +46,8 @@ namespace CKAN.ConsoleUI {
         {
             urlLog.DebugFormat("Focus requested: {0}", identifier);
 
-            // The handlers fire on the pipe thread. ConsoleInput.Post runs the work on the UI thread.
-            ConsoleInput.Post(() => {
+            // Currently on the pipe thread. Need to invoke on the UI thread.
+            PostToModList(() => {
 
                 // Clear search filter that might hide the mod.
                 SetSearch("");
@@ -55,14 +62,14 @@ namespace CKAN.ConsoleUI {
         private void HandleProtocolSearch(string query)
         {
             urlLog.DebugFormat("Search requested: {0}", query);
-            ConsoleInput.Post(() => SetSearch(query));
+            PostToModList(() => SetSearch(query));
         }
 
         private void HandleProtocolInstall(List<(string Mod, string? Version)> mods)
         {
             urlLog.DebugFormat("Install requested: {0}", string.Join(", ", mods.ConvertAll(m => m.Mod)));
 
-            ConsoleInput.Post(() => {
+            PostToModList(() => {
                 if (manager.CurrentInstance == null) {
                     return;
                 }
