@@ -48,49 +48,49 @@ namespace CKAN.IO
                 return;
             }
 
-            string host = uri.Host.ToLowerInvariant();
             var query = HttpUtility.ParseQueryString(uri.Query);
 
-            switch (host)
+            // Uri Host is always lower case.
+            switch (uri.Host)
             {
                 case "focus":
+                    string? focusMod = query["mod"];
+                    if (!string.IsNullOrWhiteSpace(focusMod))
                     {
-                        string? mod = query["mod"];
-                        if (!string.IsNullOrWhiteSpace(mod)) { OnFocus?.Invoke(mod); }
-                        break;
+                        OnFocus?.Invoke(focusMod);
                     }
+                    break;
 
                 case "search":
+                    string? q = query["q"];
+                    if (!string.IsNullOrWhiteSpace(q))
                     {
-                        string? q = query["q"];
-                        if (!string.IsNullOrWhiteSpace(q)) { OnSearch?.Invoke(q); }
-                        break;
+                        OnSearch?.Invoke(q);
                     }
+                    break;
 
                 case "install":
+                    string[]? modValues = query.GetValues("mod")
+                                               ?.Where(x => !string.IsNullOrWhiteSpace(x))
+                                               .ToArray();
+
+                    if (modValues == null || modValues.Length == 0)
                     {
-                        string[]? modValues = query.GetValues("mod")
-                                                   ?.Where(x => !string.IsNullOrWhiteSpace(x))
-                                                   .ToArray();
-
-                        if (modValues == null || modValues.Length == 0)
-                        {
-                            break;
-                        }
-
-                        var mods = modValues
-                            .Select(mod =>
-                            {
-                                int colonIndex = mod.IndexOf(':');
-                                return colonIndex == -1
-                                    ? (mod, null)
-                                    : (mod[..colonIndex], (string?)mod[(colonIndex + 1)..]);
-                            })
-                            .ToList();
-
-                        OnInstall?.Invoke(mods);
                         break;
                     }
+
+                    var mods = modValues
+                        .Select(mod =>
+                        {
+                            int colonIndex = mod.IndexOf(':');
+                            return colonIndex == -1
+                                ? (mod, null)
+                                : (mod[..colonIndex], (string?)mod[(colonIndex + 1)..]);
+                        })
+                        .ToList();
+
+                    OnInstall?.Invoke(mods);
+                    break;
             }
         }
     }
