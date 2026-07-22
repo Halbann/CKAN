@@ -38,7 +38,8 @@ namespace CKAN.GUI
 
         private void InvokeIfReady(Action action)
         {
-            Util.Invoke(this, () =>
+            // Invoke async because we don't want the URL pipe to be held up by UI rebuilding in the install case.
+            Util.AsyncInvoke(this, () =>
             {
                 if (Waiting || ManageMods.MainModList == null || tabController.TabLocked || ModalDialogOpen())
                 {
