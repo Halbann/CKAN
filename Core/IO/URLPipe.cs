@@ -63,7 +63,7 @@ namespace CKAN.IO
                     {
                         return;
                     }
-                    // URL could come from anywhere so a failure here should probably not kill the server. 
+                    // URL could come from anywhere so a failure here should probably not kill the server.
                     catch (Exception ex)
                     {
                         log.WarnFormat("URL pipe error: {0}", ex.Message);
