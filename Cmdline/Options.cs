@@ -405,7 +405,7 @@ namespace CKAN.CmdLine
         [Option("url", HelpText = "A ckan:// URL to handle once the UI is loaded")]
         public string? Url { get; set; }
 
-        [Option("no-handoff", DefaultValue = false, HelpText = "Save 50 ms on start by skipping the URL handoff attempt")]
+        [Option("no-handoff", DefaultValue = false, HelpText = "Handle any --url option here rather than try to hand it to a running UI")]
         public bool NoHandoff { get; set; }
     }
 
