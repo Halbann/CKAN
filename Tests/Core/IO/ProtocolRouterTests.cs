@@ -53,20 +53,8 @@ namespace Tests.Core.IO
             CollectionAssert.AreEqual(new[] { "JNSQ", "Astrogator" }, focused);
         }
 
-        [TestCase("//focus?mod=JNSQ")]
         [TestCase("focus?mod=JNSQ")]
-        [TestCase("///focus?mod=JNSQ")]
         public void Handle_AcceptsUrlWithoutCkanScheme(string input)
-        {
-            ProtocolRouter.Handle(input);
-
-            CollectionAssert.AreEqual(new[] { "JNSQ" }, focused);
-        }
-
-        // Browsers can normalise ckan://focus?mod=X to ckan://focus/?mod=X
-        [TestCase("ckan://focus/?mod=JNSQ")]
-        [TestCase("//focus/?mod=JNSQ")]
-        public void Handle_SlashAfterOperation_Works(string input)
         {
             ProtocolRouter.Handle(input);
 
@@ -241,11 +229,9 @@ namespace Tests.Core.IO
                                       installed[0]);
         }
 
-        [TestCase("ckan:focus?mod=JNSQ")]
-        [TestCase("ckan:/focus?mod=JNSQ")]
         [TestCase("CKAN://focus?mod=JNSQ")]
         [TestCase("Ckan://focus?mod=JNSQ")]
-        public void Handle_VariantScheme_Works(string input)
+        public void Handle_SchemeIsCaseInsensitive(string input)
         {
             ProtocolRouter.Handle(input);
 

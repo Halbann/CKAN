@@ -33,14 +33,11 @@ namespace CKAN.IO
                 return;
             }
 
-            // Defend against partial or mangled URLs: ckan:host, ckan:/host, CKAN://host, //host, host.
-
-            if (rawUrl.StartsWith("ckan:", StringComparison.OrdinalIgnoreCase))
+            // The --url option works without a scheme, e.g. install?mod=JNSQ.
+            if (!rawUrl.StartsWith("ckan://", StringComparison.OrdinalIgnoreCase))
             {
-                rawUrl = rawUrl["ckan:".Length..];
+                rawUrl = "ckan://" + rawUrl;
             }
-
-            rawUrl = "ckan://" + rawUrl.TrimStart('/');
 
             // TryCreate requires the canonical form of ckan://host
             if (!Uri.TryCreate(rawUrl, UriKind.Absolute, out var uri))
