@@ -25,7 +25,8 @@ namespace Tests.Core.IO
         [TearDown]
         public void TearDown()
         {
-            URLPipe.StopServer().Wait();
+            // A platform (apparently Unix) that might ignore the cancel token is picked up here.
+            Assert.IsTrue(URLPipe.StopServer().Wait(5000), "StopServer did not finish");
         }
 
         [Test]
