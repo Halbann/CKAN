@@ -11,8 +11,8 @@ namespace CKAN.IO
         public static event Action<string>? OnSearch;
         public static event Action<List<(string Mod, string? Version)>>? OnInstall;
 
-        // A ckan:// URL from --url waits here until a UI has subscribed above.
-        public static string? PendingLaunchUrl;
+        // --url value set by cmdline. Only HandlePendingLaunchUrl reads it.
+        public static string? PendingLaunchUrl { internal get; set; }
 
         // Registry lookups are case sensitive, so a URL written by hand would need to get the capitalisation exactly right.
         // Spec requires identifiers to be unique regardless of capitalisation, so a case insensitive match can't be ambiguous
