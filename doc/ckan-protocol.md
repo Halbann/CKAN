@@ -83,3 +83,7 @@ URL operations can be used from the command line with the --url option like so:
     ckan.exe gui --url install?mod=SterlingSystemsEngines
 
     ckan.exe consoleui --url search?q=%40JadeOfMaar
+
+You need to enclose the URL in quotes when using an ampersand (linking multiple mods).
+
+    ckan.exe consoleui --url "install?mod=JNSQ:0.10.0&mod=Astrogator:1.0.0"
