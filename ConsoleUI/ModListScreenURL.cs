@@ -10,6 +10,7 @@ namespace CKAN.ConsoleUI {
 
     public partial class ModListScreen {
 
+        // Log Debug rather than Warn throughout because Warn prints to the console and breaks rendering.
         private static readonly ILog urlLog = LogManager.GetLogger("URL");
 
         /// <summary>
@@ -38,7 +39,7 @@ namespace CKAN.ConsoleUI {
             if (Current == this) {
                 ConsoleInput.Post(action);
             } else {
-                urlLog.Warn("Ignoring URL because another screen is running");
+                urlLog.Debug("Ignoring URL because another screen is running");
             }
         }
 
@@ -89,8 +90,8 @@ namespace CKAN.ConsoleUI {
                         if (version != null) {
                             module = registry.GetModuleByVersion(ident, version);
                             if (module == null) {
-                                urlLog.WarnFormat("Version {0} of {1} not in registry. Using latest compatible.",
-                                                  version, modId);
+                                urlLog.DebugFormat("Version {0} of {1} not in registry. Using latest compatible.",
+                                                   version, modId);
                             }
                         }
 
@@ -99,12 +100,12 @@ namespace CKAN.ConsoleUI {
                                                             manager.CurrentInstance.StabilityToleranceConfig,
                                                             manager.CurrentInstance.VersionCriteria());
                     } catch (Exception ex) {
-                        urlLog.WarnFormat("Could not resolve {0}: {1}", modId, ex.Message);
+                        urlLog.DebugFormat("Could not resolve {0}: {1}", modId, ex.Message);
                         continue;
                     }
 
                     if (module == null) {
-                        urlLog.WarnFormat("Mod not found in registry: {0}", modId);
+                        urlLog.DebugFormat("Mod not found in registry: {0}", modId);
                         continue;
                     }
 
