@@ -23,7 +23,7 @@ namespace CKAN.URLHandler
     public static class Program
     {
         // Must match CKAN.IO.URLPipe.Name.
-        private const string PipeName = "CKAN_URL_PIPE";
+        private static readonly string PipeName = $"CKAN_URL_PIPE_{Environment.UserName}";
 
         public static int Main(string[] args)
         {

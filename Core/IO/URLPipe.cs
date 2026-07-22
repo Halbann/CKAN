@@ -12,8 +12,9 @@ namespace CKAN.IO
     // The receiver dispatches them via ProtocolRouter on a pipe thread.
     public static class URLPipe
     {
-        // Internal set so that tests don't fight each other or a running CKAN over one global pipe.
-        public static string Name { get; internal set; } = "CKAN_URL_PIPE";
+        // The user name suffix is needed to stop two accounts on one machine fighting over the same pipe.
+        // Must be matched by CKAN.URLHandler.Program.PipeName.
+        public static string Name { get; internal set; } = $"CKAN_URL_PIPE_{Environment.UserName}";
 
         private static readonly ILog log = LogManager.GetLogger(typeof(URLPipe));
         private static CancellationTokenSource? cancellationToken;
