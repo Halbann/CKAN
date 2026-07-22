@@ -22,23 +22,21 @@ namespace CKAN.URLHandler
     [ExcludeFromCodeCoverage]
     public static class Program
     {
-        // Must match CKAN.IO.URLPipe.Name.
-        private static readonly string PipeName = $"CKAN_URL_PIPE_{Environment.UserName}";
-
         public static int Main(string[] args)
         {
             // Call should only ever come from the URL handler reg entry, so the args are known ahead of time:
-            // <path to ckan.exe> <verb> <url>.
-            // The verb is whichever UI registered last.
+            // <path to ckan.exe> <verb> <pipe name> <url>.
+            // The verb is whichever UI registered last. CKAN passes its own pipe name so the two can't drift.
 
-            if (args.Length != 3 || string.IsNullOrWhiteSpace(args[0]) || string.IsNullOrWhiteSpace(args[2]))
+            if (args.Length != 4 || string.IsNullOrWhiteSpace(args[0]) || string.IsNullOrWhiteSpace(args[2]) || string.IsNullOrWhiteSpace(args[3]))
             {
                 return 1;
             }
 
             var ckanExe = args[0];
             var verb = args[1];
-            var url = args[2];
+            var pipeName = args[2];
+            var url = args[3];
 
             // A ckan url can't contain a quote. Reject it rather than let it splice arguments onto the ckan.exe command line.
             if (url.IndexOf('"') >= 0)
@@ -46,16 +44,16 @@ namespace CKAN.URLHandler
                 return 1;
             }
 
-            return (TrySendToRunningInstance(url) || LaunchCKAN(ckanExe, verb, url)) ? 0 : 1;
+            return (TrySendToRunningInstance(pipeName, url) || LaunchCKAN(ckanExe, verb, url)) ? 0 : 1;
         }
 
         // Duplicates URLPipe.TrySend because this project can't reference Core.
         // Necessary to make the url handler as small as possible.
-        private static bool TrySendToRunningInstance(string url)
+        private static bool TrySendToRunningInstance(string pipeName, string url)
         {
             try
             {
-                using var client = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
+                using var client = new NamedPipeClientStream(".", pipeName, PipeDirection.Out);
                 client.Connect(50);
 
                 // CKAN GUI can't bring its own window to the front. This program inherits that right

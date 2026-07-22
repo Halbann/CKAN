@@ -13,7 +13,7 @@ namespace CKAN.IO
     public static class URLPipe
     {
         // The user name suffix is needed to stop two accounts on one machine fighting over the same pipe.
-        // Must be matched by CKAN.URLHandler.Program.PipeName.
+        // Passed to the URL handler stub at registration time.
         public static string Name { get; internal set; } = $"CKAN_URL_PIPE_{Environment.UserName}";
 
         private static readonly ILog log = LogManager.GetLogger(typeof(URLPipe));
