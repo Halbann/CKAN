@@ -70,6 +70,8 @@ namespace CKAN.GUI
 
             InvokeIfReady(() =>
             {
+                tabController.ShowTab(ManageModsTabPage.Name);
+
                 // Clear any search that might be hiding the mod.
                 ManageMods.SetSearches(new List<ModSearch>());
 
@@ -86,6 +88,8 @@ namespace CKAN.GUI
             {
                 if (CurrentInstance != null)
                 {
+                    tabController.ShowTab(ManageModsTabPage.Name);
+
                     var search = ModSearch.Parse(ModuleLabelList.ModuleLabels, CurrentInstance, query);
                     if (search != null)
                     {
