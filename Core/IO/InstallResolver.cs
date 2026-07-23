@@ -75,8 +75,7 @@ namespace CKAN.IO
         private static (string Query, CkanModule? Module, InstallOutcome Outcome) Classify(
             string query, CkanModule available, bool compatible, string? version, IRegistryQuerier registry)
         {
-            var pinned = version == null ? null
-                                         : registry.GetModuleByVersion(available.identifier, version);
+            var pinned = version == null ? null : registry.GetModuleByVersionTolerant(available.identifier, version);
             var module = pinned ?? available;
 
             if (!compatible)
