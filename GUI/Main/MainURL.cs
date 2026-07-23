@@ -121,51 +121,25 @@ namespace CKAN.GUI
                 }
 
                 var reg = RegistryManager.Instance(CurrentInstance, repoData).registry;
+                var resolved = InstallResolver.Resolve(mods, reg,
+                                                       CurrentInstance.StabilityToleranceConfig,
+                                                       CurrentInstance.VersionCriteria());
                 var marked = false;
 
                 // Freeze so the changeset recomputes once at the end instead of once per mod.
                 ManageMods.WithFrozenChangeset(() =>
                 {
-                    foreach (var (modId, version) in mods)
+                    foreach (var (query, module, outcome) in resolved)
                     {
-                        // Resolving against row keys rather than the registry matches the row lookup further down.
-                        var ident = ProtocolRouter.CanonicalIdentifier(modId, rows.Keys) ?? modId;
-
-                        // The id and version came from a URL, so treat any failure as not found.
-                        CkanModule? module = null;
-                        try
+                        if (module == null || outcome == InstallOutcome.Incompatible)
                         {
-                            // Try to get versioned module.
-                            if (version != null)
-                            {
-                                module = reg.GetModuleByVersion(ident, version);
-                                if (module == null)
-                                {
-                                    urlLog.WarnFormat("Version {0} of {1} not in registry. Falling back to latest compatible",
-                                                      version, modId);
-                                }
-                            }
-
-                            // Default to latest.
-                            module ??= reg.LatestAvailable(ident,
-                                                           CurrentInstance.StabilityToleranceConfig,
-                                                           CurrentInstance.VersionCriteria());
-                        }
-                        catch (Exception ex)
-                        {
-                            urlLog.WarnFormat("Could not resolve {0}: {1}", modId, ex.Message);
-                            continue;
-                        }
-
-                        if (module == null)
-                        {
-                            urlLog.WarnFormat("Mod not found in registry: {0}", modId);
+                            urlLog.WarnFormat("Skipping {0}: {1}", query, outcome);
                             continue;
                         }
 
                         // Setting SelectedMod is the same thing as when the user ticks an install checkbox.
                         // Therefore URL clicks accumulate with anything already marked and the user can remove mods normally.
-                        if (rows.TryGetValue(ident, out var row)
+                        if (rows.TryGetValue(module.identifier, out var row)
                             && row.Tag is GUIMod gmod)
                         {
                             gmod.SelectedMod = module;
@@ -173,7 +147,7 @@ namespace CKAN.GUI
                         }
                         else
                         {
-                            urlLog.WarnFormat("No mod list row for {0}. Cannot mark for install", modId);
+                            urlLog.WarnFormat("No mod list row for {0}. Cannot mark for install", module.identifier);
                         }
                     }
                 });

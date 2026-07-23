@@ -16,11 +16,6 @@ namespace CKAN.IO
 
         public static bool HasPendingLaunchUrl => PendingLaunchUrl != null;
 
-        // Registry lookups are case sensitive, so a URL written by hand would need to get the capitalisation exactly right.
-        // Spec requires identifiers to be unique regardless of capitalisation, so a case insensitive match can't be ambiguous
-        public static string? CanonicalIdentifier(string identifier, IEnumerable<string> known)
-            => known.FirstOrDefault(k => string.Equals(k, identifier, StringComparison.OrdinalIgnoreCase));
-
         // Call once subscribed. Handles the --url URL if there was one.
         public static void HandlePendingLaunchUrl()
         {

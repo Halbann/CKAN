@@ -77,35 +77,12 @@ namespace CKAN.ConsoleUI {
 
                 bool installAny = false;
 
-                foreach (var (modId, version) in mods) {
-                    var ident = allMods == null
-                                    ? modId
-                                    : ProtocolRouter.CanonicalIdentifier(modId, allMods.ConvertAll(m => m.identifier))
-                                      ?? modId;
-
-                    // The id and version came from a URL, so treat any failure as not found.
-                    CkanModule? module = null;
-                    try {
-                        // Try to get versioned module.
-                        if (version != null) {
-                            module = registry.GetModuleByVersion(ident, version);
-                            if (module == null) {
-                                urlLog.DebugFormat("Version {0} of {1} not in registry. Using latest compatible.",
-                                                   version, modId);
-                            }
-                        }
-
-                        // Default to latest.
-                        module ??= registry.LatestAvailable(ident,
-                                                            manager.CurrentInstance.StabilityToleranceConfig,
-                                                            manager.CurrentInstance.VersionCriteria());
-                    } catch (Exception ex) {
-                        urlLog.DebugFormat("Could not resolve {0}: {1}", modId, ex.Message);
-                        continue;
-                    }
-
-                    if (module == null) {
-                        urlLog.DebugFormat("Mod not found in registry: {0}", modId);
+                var resolved = InstallResolver.Resolve(mods, registry,
+                                                       manager.CurrentInstance.StabilityToleranceConfig,
+                                                       manager.CurrentInstance.VersionCriteria());
+                foreach (var (query, module, outcome) in resolved) {
+                    if (module == null || outcome == InstallOutcome.Incompatible) {
+                        urlLog.DebugFormat("Skipping {0}: {1}", query, outcome);
                         continue;
                     }
 

@@ -260,19 +260,5 @@ namespace Tests.Core.IO
             Assert.IsEmpty(searched);
             Assert.IsEmpty(installed);
         }
-
-        [TestCase("JNSQ")]
-        [TestCase("jnsq")]
-        [TestCase("JnSq")]
-        public void CanonicalIdentifier_AnyCase_ReturnsRegistryCasing(string input)
-        {
-            Assert.AreEqual("JNSQ", ProtocolRouter.CanonicalIdentifier(input, new[] { "Astrogator", "JNSQ" }));
-        }
-
-        [Test]
-        public void CanonicalIdentifier_UnknownMod_ReturnsNull()
-        {
-            Assert.IsNull(ProtocolRouter.CanonicalIdentifier("NoSuchMod", new[] { "Astrogator", "JNSQ" }));
-        }
     }
 }
