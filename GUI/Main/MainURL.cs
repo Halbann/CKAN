@@ -9,6 +9,7 @@ using System.Runtime.Versioning;
 using log4net;
 
 using CKAN.IO;
+using CKAN.GUI.Attributes;
 
 namespace CKAN.GUI
 {
@@ -38,6 +39,7 @@ namespace CKAN.GUI
         private static bool ModalDialogOpen()
             => Application.OpenForms.OfType<Form>().Any(f => f.Modal);
 
+        [ForbidGUICalls]
         private void InvokeIfReady(Action action)
         {
             // Invoke async because we don't want the URL pipe to be held up by UI rebuilding in the install case.
@@ -67,6 +69,7 @@ namespace CKAN.GUI
             Activate();
         }
 
+        [ForbidGUICalls]
         private void HandleProtocolError(UrlError error)
         {
             urlLog.WarnFormat("Cannot handle URL: {0}", error);
@@ -78,6 +81,7 @@ namespace CKAN.GUI
             });
         }
 
+        [ForbidGUICalls]
         private void HandleProtocolFocus(string identifier)
         {
             urlLog.DebugFormat("Focus requested: {0}", identifier);
@@ -94,6 +98,7 @@ namespace CKAN.GUI
             });
         }
 
+        [ForbidGUICalls]
         private void HandleProtocolSearch(string query)
         {
             urlLog.DebugFormat("Search requested: {0}", query);
@@ -115,6 +120,7 @@ namespace CKAN.GUI
             });
         }
 
+        [ForbidGUICalls]
         private void HandleProtocolInstall(List<(string Mod, string? Version)> mods)
         {
             urlLog.DebugFormat("Install requested: {0}", string.Join(", ", mods.Select(m => m.Mod)));
