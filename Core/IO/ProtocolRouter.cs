@@ -14,6 +14,8 @@ namespace CKAN.IO
         // --url value set by cmdline. Only HandlePendingLaunchUrl reads it.
         public static string? PendingLaunchUrl { internal get; set; }
 
+        public static bool HasPendingLaunchUrl => PendingLaunchUrl != null;
+
         // Registry lookups are case sensitive, so a URL written by hand would need to get the capitalisation exactly right.
         // Spec requires identifiers to be unique regardless of capitalisation, so a case insensitive match can't be ambiguous
         public static string? CanonicalIdentifier(string identifier, IEnumerable<string> known)
