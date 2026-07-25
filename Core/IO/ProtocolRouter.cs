@@ -5,12 +5,10 @@ using System.Web;
 
 namespace CKAN.IO
 {
-    // Why a URL couldn't be handled. Each UI words these itself.
     public enum UrlError
     {
         BadSyntax,
         UnknownOperation,
-        // The operation is known but nothing usable came with it.
         NoValidKeys,
     }
 
@@ -21,7 +19,7 @@ namespace CKAN.IO
         public static event Action<List<(string Mod, string? Version)>>? OnInstall;
         public static event Action<UrlError>? OnError;
 
-        // --url value set by cmdline. Only HandlePendingLaunchUrl reads it.
+        // --url value set by cmdline. Only read by HandlePendingLaunchUrl.
         public static string? PendingLaunchUrl { internal get; set; }
 
         public static bool HasPendingLaunchUrl => PendingLaunchUrl != null;
@@ -44,6 +42,7 @@ namespace CKAN.IO
 
         public static void Handle(string? rawUrl)
         {
+            // Double null check to appease compiler.
             if (rawUrl == null || string.IsNullOrWhiteSpace(rawUrl))
             {
                 return;
@@ -55,7 +54,7 @@ namespace CKAN.IO
                 rawUrl = "ckan://" + rawUrl;
             }
 
-            // TryCreate requires the canonical form of ckan://host
+            // Will fail if rawUrl isn't in the form `scheme://host?key=value&key=value`
             if (!Uri.TryCreate(rawUrl, UriKind.Absolute, out var uri))
             {
                 OnError?.Invoke(UrlError.BadSyntax);
@@ -68,57 +67,58 @@ namespace CKAN.IO
             switch (uri.Host)
             {
                 case "focus":
-                    string? focusMod = query["mod"];
-                    if (!string.IsNullOrWhiteSpace(focusMod))
-                    {
-                        OnFocus?.Invoke(focusMod);
-                    }
-                    else
-                    {
-                        OnError?.Invoke(UrlError.NoValidKeys);
-                    }
+                    RouteValue(query["mod"], OnFocus);
                     break;
-
                 case "search":
-                    string? q = query["q"];
-                    if (!string.IsNullOrWhiteSpace(q))
-                    {
-                        OnSearch?.Invoke(q);
-                    }
-                    else
-                    {
-                        OnError?.Invoke(UrlError.NoValidKeys);
-                    }
+                    RouteValue(query["q"], OnSearch);
                     break;
-
                 case "install":
-                    string[]? modValues = query.GetValues("mod")
-                                               ?.Where(x => !string.IsNullOrWhiteSpace(x))
-                                               .ToArray();
-
-                    if (modValues == null || modValues.Length == 0)
-                    {
-                        OnError?.Invoke(UrlError.NoValidKeys);
-                        break;
-                    }
-
-                    var mods = modValues
-                        .Select(mod =>
-                        {
-                            int colonIndex = mod.IndexOf(':');
-                            return colonIndex == -1
-                                ? (mod, null)
-                                : (mod[..colonIndex], (string?)mod[(colonIndex + 1)..]);
-                        })
-                        .ToList();
-
-                    OnInstall?.Invoke(mods);
+                    RouteMods(query.GetValues("mod"), OnInstall);
                     break;
-
                 default:
                     OnError?.Invoke(UrlError.UnknownOperation);
                     break;
             }
+        }
+
+        private static void RouteValue(string? value, Action<string>? handler)
+        {
+            // We expect one value at this point, but the URL could include multiple, and they will end up here as CSV.
+
+            if (value != null)
+            {
+                int comma = value.IndexOf(',');
+                string first = (comma >= 0 ? value[..comma] : value).Trim();
+
+                if (first.Length > 0)
+                {
+                    handler?.Invoke(first);
+                    return;
+                }
+            }
+
+            OnError?.Invoke(UrlError.NoValidKeys);
+        }
+
+        private static void RouteMods(string[]? modValues, Action<List<(string Mod, string? Version)>>? handler)
+        {
+            modValues = modValues?.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+
+            if (modValues == null || modValues.Length == 0)
+            {
+                OnError?.Invoke(UrlError.NoValidKeys);
+                return;
+            }
+
+            handler?.Invoke(modValues.Select(SplitPinned).ToList());
+        }
+
+        // Split "mod:version" or "mod" into "mod" and a nullable "version".
+        private static (string Mod, string? Version) SplitPinned(string mod)
+        {
+            int colon = mod.IndexOf(':');
+
+            return colon == -1 ? (mod, null) : (mod[..colon], mod[(colon + 1)..]);
         }
     }
 }
