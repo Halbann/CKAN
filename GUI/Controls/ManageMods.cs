@@ -1533,6 +1533,7 @@ namespace CKAN.GUI
             }
         }
 
+        [ForbidGUICalls]
         private IEnumerable<ModChange> ReinstallChanges(IEnumerable<CkanModule> modules, GameInstance instance)
         {
             var registry = RegistryManager.Instance(instance, repoData).registry;
