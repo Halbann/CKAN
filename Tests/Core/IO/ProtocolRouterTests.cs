@@ -12,6 +12,7 @@ namespace Tests.Core.IO
         private readonly List<string> focused = new List<string>();
         private readonly List<string> searched = new List<string>();
         private readonly List<List<(string Mod, string? Version)>> installed = new List<List<(string Mod, string? Version)>>();
+        private readonly List<UrlError> errors = new List<UrlError>();
 
         [SetUp]
         public void SetUp()
@@ -19,10 +20,12 @@ namespace Tests.Core.IO
             focused.Clear();
             searched.Clear();
             installed.Clear();
+            errors.Clear();
             ProtocolRouter.PendingLaunchUrl = null;
             ProtocolRouter.OnFocus += focused.Add;
             ProtocolRouter.OnSearch += searched.Add;
             ProtocolRouter.OnInstall += installed.Add;
+            ProtocolRouter.OnError += errors.Add;
         }
 
         [TearDown]
@@ -31,6 +34,7 @@ namespace Tests.Core.IO
             ProtocolRouter.OnFocus -= focused.Add;
             ProtocolRouter.OnSearch -= searched.Add;
             ProtocolRouter.OnInstall -= installed.Add;
+            ProtocolRouter.OnError -= errors.Add;
         }
 
         [TestCase("")]
@@ -259,6 +263,35 @@ namespace Tests.Core.IO
             Assert.IsEmpty(focused);
             Assert.IsEmpty(searched);
             Assert.IsEmpty(installed);
+        }
+
+        [TestCase("ckan://a:b")]
+        [TestCase("ckan://[")]
+        [TestCase("ckan://foo bar")]
+        public void Handle_UnparseableUrl_RaisesBadSyntax(string input)
+        {
+            ProtocolRouter.Handle(input);
+
+            CollectionAssert.AreEqual(new[] { UrlError.BadSyntax }, errors);
+        }
+
+        [TestCase("ckan://select?mod=JNSQ")]
+        [TestCase("ckan://garbage")]
+        public void Handle_UnknownOperation_RaisesUnknownOperation(string input)
+        {
+            ProtocolRouter.Handle(input);
+
+            CollectionAssert.AreEqual(new[] { UrlError.UnknownOperation }, errors);
+        }
+
+        [TestCase("ckan://focus")]
+        [TestCase("ckan://search?q=")]
+        [TestCase("ckan://install?mod=")]
+        public void Handle_MissingValue_RaisesNoValidKeys(string input)
+        {
+            ProtocolRouter.Handle(input);
+
+            CollectionAssert.AreEqual(new[] { UrlError.NoValidKeys }, errors);
         }
     }
 }
