@@ -76,8 +76,9 @@ namespace CKAN.GUI
 
             InvokeIfReady(() =>
             {
-                ErrorDialog("{0}", ProtocolRouter.ErrorMessage(error));
+                // Foreground before the modal, or it opens behind the window.
                 RaiseToForeground();
+                ErrorDialog("{0}", ProtocolRouter.ErrorMessage(error));
             });
         }
 
@@ -140,6 +141,8 @@ namespace CKAN.GUI
                     return;
                 }
 
+                RaiseToForeground();
+
                 // Resolve mods from the URL and have the user confirm or decide any issues.
 
                 var inst = CurrentInstance;
@@ -175,8 +178,6 @@ namespace CKAN.GUI
                 {
                     tabController.ShowTab(ChangesetTabPage.Name, 1);
                 }
-
-                RaiseToForeground();
             });
         }
     }
