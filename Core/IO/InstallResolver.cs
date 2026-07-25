@@ -52,12 +52,12 @@ namespace CKAN.IO
 
             var found = new Dictionary<string, ResolvedMod>(StringComparer.OrdinalIgnoreCase);
 
-            TakeMatches(registry.CompatibleModules(stability, versions), true, find, found, registry);
+            TakeMatches(registry.CompatibleModules(stability, versions), true, find, found, registry, versions);
 
             // Any remaining mods may be incompatible, so check those.
             if (find.Count > 0)
             {
-                TakeMatches(registry.IncompatibleModules(stability, versions), false, find, found, registry);
+                TakeMatches(registry.IncompatibleModules(stability, versions), false, find, found, registry, versions);
             }
 
             // Anything left now is definitely not in the registry for this game.
@@ -78,7 +78,8 @@ namespace CKAN.IO
             bool compatible,
             Dictionary<string, (string Query, string? Version)> find,
             Dictionary<string, ResolvedMod> found,
-            IRegistryQuerier registry)
+            IRegistryQuerier registry,
+            GameVersionCriteria versions)
         {
             foreach (var module in modules)
             {
@@ -86,18 +87,22 @@ namespace CKAN.IO
                 if (find.TryGetValue(module.identifier, out var want))
                 {
                     find.Remove(module.identifier);
-                    found[module.identifier] = Classify(want.Query, module, compatible, want.Version, registry);
+                    found[module.identifier] = Classify(want.Query, module, compatible, want.Version, registry, versions);
                 }
             }
         }
 
         private static ResolvedMod Classify(
-            string query, CkanModule available, bool compatible, string? version, IRegistryQuerier registry)
+            string query, CkanModule available, bool compatible, string? version, IRegistryQuerier registry,
+            GameVersionCriteria versions)
         {
             CkanModule? pinned = version == null ? null : registry.GetModuleByVersionTolerant(available.identifier, version);
             CkanModule module = pinned ?? available;
 
-            var outcome = !compatible ? InstallOutcome.Incompatible
+            // A mod can come from `registry.CompatibleModules` but the pinned version may be incompatible.
+            bool isCompatible = pinned == null ? compatible : module.IsCompatible(versions);
+
+            var outcome = !isCompatible ? InstallOutcome.Incompatible
                 : version != null && pinned == null ? InstallOutcome.PinMissed
                 : module.Equals(registry.GetInstalledVersion(module.identifier)) ? InstallOutcome.AlreadyInstalled
                 : InstallOutcome.Ready;
