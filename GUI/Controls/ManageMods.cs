@@ -2309,7 +2309,11 @@ namespace CKAN.GUI
 
             if (markedReinstalls.Count > 0)
             {
-                user_change_set.UnionWith(ReinstallChanges(markedReinstalls, inst));
+                // A reinstall clashes with any other change to the same mod. Skip reinstalling mods with other changes.
+                var changing = user_change_set.Select(ch => ch.Mod.identifier).ToHashSet();
+                var reinstalls = markedReinstalls.Where(m => !changing.Contains(m.identifier));
+
+                user_change_set.UnionWith(ReinstallChanges(reinstalls, inst));
             }
 
             try
