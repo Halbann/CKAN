@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,91 +7,102 @@ using CKAN.Versioning;
 
 namespace CKAN.IO
 {
-    // How a mod from an install URL resolved against the registry. Each UI presents these the same way.
-    // Module is the mod to act on. It's null only for Unknown.
     public enum InstallOutcome
     {
         Ready,
         AlreadyInstalled,
-        // The pinned version isn't in the registry. Module is the latest instead.
-        PinMissed,
-        // Nothing for this mod is compatible. The user has to confirm before we install it.
+        PinMissed, // The pinned version isn't in the registry.
         Incompatible,
         Unknown,
     }
 
+    public readonly struct ResolvedMod
+    {
+        public ResolvedMod(string query, CkanModule? module, InstallOutcome outcome)
+        {
+            Query = query;
+            Module = module;
+            Outcome = outcome;
+        }
+
+        public readonly string Query;
+        public readonly CkanModule? Module;
+        public readonly InstallOutcome Outcome;
+    }
+
     public static class InstallResolver
     {
-        // Resolve the mods from an install URL in a single pass over the registry.
-        // Matching is case insensitive so a URL written by hand needn't get the capitalisation right.
-        // The spec requires identifiers to be unique regardless of case, so this can't be ambiguous.
-        public static List<(string Query, CkanModule? Module, InstallOutcome Outcome)> Resolve(
+        /// <summary>
+        /// Resolve the mods from an install URL in a single pass over the registry.
+        /// </summary>
+        public static List<ResolvedMod> Resolve(
             IEnumerable<(string Mod, string? Version)> mods,
             IRegistryQuerier registry,
             StabilityToleranceConfig stability,
-            GameVersionCriteria crit)
+            GameVersionCriteria versions)
         {
-            var pending = new Dictionary<string, (string Query, string? Version)>();
+            // Matching is case insensitive so a hand written URL needn't have perfect capitalisation.
+            // The spec requires identifiers to be unique regardless of case.
+            // Assigning in a loop lets it tolerate duplicates.
+            var find = new Dictionary<string, (string Query, string? Version)>(StringComparer.OrdinalIgnoreCase);
             foreach (var (mod, version) in mods)
             {
-                pending[mod.ToLowerInvariant()] = (mod, version);
+                find[mod] = (mod, version);
             }
 
-            // Which stream a mod arrives in is its compatibility.
-            var compatible = registry.CompatibleModules(stability, crit)
-                                     .Select(m => (Module: m, Compatible: true));
-            var incompatible = registry.IncompatibleModules(stability, crit)
-                                       .Select(m => (Module: m, Compatible: false));
+            var found = new Dictionary<string, ResolvedMod>(StringComparer.OrdinalIgnoreCase);
 
-            // Stop the moment every wanted mod is accounted for.
-            var found = new Dictionary<string, (string Query, CkanModule? Module, InstallOutcome Outcome)>();
-            foreach (var (module, isCompatible) in compatible.Concat(incompatible))
+            TakeMatches(registry.CompatibleModules(stability, versions), true, find, found, registry);
+
+            // Any remaining mods may be incompatible, so check those.
+            if (find.Count > 0)
             {
-                if (pending.Count == 0)
-                {
-                    break;
-                }
-
-                var key = module.identifier.ToLowerInvariant();
-                if (pending.TryGetValue(key, out var want))
-                {
-                    pending.Remove(key);
-                    found[key] = Classify(want.Query, module, isCompatible, want.Version, registry);
-                }
+                TakeMatches(registry.IncompatibleModules(stability, versions), false, find, found, registry);
             }
 
-            // Anything left never appeared in the registry.
-            foreach (var (key, want) in pending)
+            // Anything left now is definitely not in the registry for this game.
+            foreach (var (key, want) in find)
             {
-                found[key] = (want.Query, null, InstallOutcome.Unknown);
+                found[key] = new ResolvedMod(want.Query, null, InstallOutcome.Unknown);
             }
 
             // One result per mod, in the order the URL listed them.
-            return mods.Select(m => m.Mod.ToLowerInvariant())
-                       .Distinct()
+            return mods.Select(m => m.Mod)
+                       .Distinct(StringComparer.OrdinalIgnoreCase)
                        .Select(key => found[key])
                        .ToList();
         }
 
-        private static (string Query, CkanModule? Module, InstallOutcome Outcome) Classify(
+        private static void TakeMatches(
+            IEnumerable<CkanModule> modules,
+            bool compatible,
+            Dictionary<string, (string Query, string? Version)> find,
+            Dictionary<string, ResolvedMod> found,
+            IRegistryQuerier registry)
+        {
+            foreach (var module in modules)
+            {
+                if (find.Count == 0) { break; }
+                if (find.TryGetValue(module.identifier, out var want))
+                {
+                    find.Remove(module.identifier);
+                    found[module.identifier] = Classify(want.Query, module, compatible, want.Version, registry);
+                }
+            }
+        }
+
+        private static ResolvedMod Classify(
             string query, CkanModule available, bool compatible, string? version, IRegistryQuerier registry)
         {
-            var pinned = version == null ? null : registry.GetModuleByVersionTolerant(available.identifier, version);
-            var module = pinned ?? available;
+            CkanModule? pinned = version == null ? null : registry.GetModuleByVersionTolerant(available.identifier, version);
+            CkanModule module = pinned ?? available;
 
-            if (!compatible)
-            {
-                return (query, module, InstallOutcome.Incompatible);
-            }
+            var outcome = !compatible ? InstallOutcome.Incompatible
+                : version != null && pinned == null ? InstallOutcome.PinMissed
+                : module.Equals(registry.GetInstalledVersion(module.identifier)) ? InstallOutcome.AlreadyInstalled
+                : InstallOutcome.Ready;
 
-            if (version != null && pinned == null)
-            {
-                return (query, module, InstallOutcome.PinMissed);
-            }
-
-            return module.Equals(registry.GetInstalledVersion(module.identifier))
-                ? (query, module, InstallOutcome.AlreadyInstalled)
-                : (query, module, InstallOutcome.Ready);
+            return new ResolvedMod(query, module, outcome);
         }
     }
 }

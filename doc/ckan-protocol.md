@@ -5,11 +5,11 @@ If CKAN is running already then the current window will pull focus and handle th
 window will be opened. The GUI and the console UI both handle URLs. If CKAN isn't already running when
 you click a link, then it launches whichever UI was last used.
 
-This works on Windows and Linux. macOS is a bit trickier and therefore not supported yet.
+This works on Windows and Linux. macOS is trickier, and therefore not supported yet.
 
 The name you use for a mod in a URL is called its Identifier. You can find this in the mod info panel in the GUI.
-Not only does an identifier not contain any spaces, but it can sometimes differ significantly from the mod title,
-so make sure you write the actual identifier when writing a CKAN URL.
+An identifier never contains spaces and can differ significantly from the mod title, so make sure you write the 
+actual identifier when writing a CKAN URL.
 
 Some examples:
 
@@ -17,7 +17,7 @@ Some examples:
 - 'EVE - Stock Planet Configs' -> `EnvironmentalVisualEnhancements-HR`
 - 'Scatterer Default Config' -> `Scatterer-config`
 
-For convenience, identifiers in URLs can be case-insensitive. So `realsolarsystem` finds the same mod as `RealSolarSystem`.
+For convenience, identifiers in URLs are matched case-insensitive. So `realsolarsystem` finds the same mod as `RealSolarSystem`.
 
 There's currently no special handling for different games; it just tries to use the current instance,
 even if the mod in the URL is for a different game.
@@ -50,8 +50,8 @@ with a [website like this one](https://meyerweb.com/eric/tools/dencoder/).
 
     ckan://install?mod=RealSolarSystem
 
-Marks the mods for install. It only takes the user as far as the changeset screen, so nothing is actually
-installed without user confirmation. Clicking more install links adds to the same changeset.
+Marks the mods for install. It only takes you as far as the changeset screen, so nothing is actually
+installed without confirmation. Clicking more install links adds to the same changeset.
 
 Repeat the mod parameter to install several mods at once.
 
@@ -61,7 +61,12 @@ Pin a particular version with a colon:
 
     ckan://install?mod=JNSQ:0.10.0
 
-If that version isn't in the registry, then the latest compatible version is used.
+When a link asks for something CKAN can't or won't do without approval, it tells you and lets you either continue, skip, or cancel altogether:
+
+- Mods not in the registry are named.
+- If a pinned version isn't in the registry, then the latest compatible version can be used.
+- An incompatible mod must be confirmed before it's marked for install, like any other incompatible install.
+- Mods you already have are offered for re-install.
 
 ## Registration
 
@@ -86,4 +91,4 @@ URL operations can be used from the command line with the --url option like so:
 
 You need to enclose the URL in quotes when using an ampersand (linking multiple mods).
 
-    ckan.exe consoleui --url "install?mod=JNSQ:0.10.0&mod=Astrogator:1.0.0"
+    ckan.exe consoleui --url "install?mod=JNSQ&mod=Astrogator"

@@ -24,6 +24,7 @@ namespace CKAN.GUI
             ProtocolRouter.OnFocus += HandleProtocolFocus;
             ProtocolRouter.OnSearch += HandleProtocolSearch;
             ProtocolRouter.OnInstall += HandleProtocolInstall;
+            ProtocolRouter.OnError += HandleProtocolError;
         }
 
         private void UnwireProtocolRouter()
@@ -31,6 +32,7 @@ namespace CKAN.GUI
             ProtocolRouter.OnFocus -= HandleProtocolFocus;
             ProtocolRouter.OnSearch -= HandleProtocolSearch;
             ProtocolRouter.OnInstall -= HandleProtocolInstall;
+            ProtocolRouter.OnError -= HandleProtocolError;
         }
 
         private static bool ModalDialogOpen()
@@ -63,6 +65,17 @@ namespace CKAN.GUI
             }
 
             Activate();
+        }
+
+        private void HandleProtocolError(UrlError error)
+        {
+            urlLog.WarnFormat("Cannot handle URL: {0}", error);
+
+            InvokeIfReady(() =>
+            {
+                ErrorDialog("{0}", ProtocolRouter.ErrorMessage(error));
+                RaiseToForeground();
+            });
         }
 
         private void HandleProtocolFocus(string identifier)
@@ -110,6 +123,7 @@ namespace CKAN.GUI
             {
                 if (CurrentInstance == null)
                 {
+                    urlLog.Warn("Instance not loaded. Cannot mark anything for install");
                     return;
                 }
 
@@ -120,30 +134,26 @@ namespace CKAN.GUI
                     return;
                 }
 
-                var reg = RegistryManager.Instance(CurrentInstance, repoData).registry;
-                var resolved = InstallResolver.Resolve(mods, reg,
-                                                       CurrentInstance.StabilityToleranceConfig,
-                                                       CurrentInstance.VersionCriteria());
-                var marked = false;
+                // Resolve mods from the URL and have the user confirm or decide any issues.
+
+                var inst = CurrentInstance;
+                var reg = RegistryManager.Instance(inst, repoData).registry;
+                var crit = inst.VersionCriteria();
+
+                List<ResolvedMod> resolved = InstallResolver.Resolve(mods, reg, inst.StabilityToleranceConfig, crit);
+                InstallUrlPlan plan = InstallUrlPrompt.Confirm(resolved, currentUser, inst.Game.ShortName, crit.ToSummaryString(inst.Game));
 
                 // Freeze so the changeset recomputes once at the end instead of once per mod.
                 ManageMods.WithFrozenChangeset(() =>
                 {
-                    foreach (var (query, module, outcome) in resolved)
+                    foreach (var module in plan.Install)
                     {
-                        if (module == null || outcome == InstallOutcome.Incompatible)
-                        {
-                            urlLog.WarnFormat("Skipping {0}: {1}", query, outcome);
-                            continue;
-                        }
-
                         // Setting SelectedMod is the same thing as when the user ticks an install checkbox.
                         // Therefore URL clicks accumulate with anything already marked and the user can remove mods normally.
                         if (rows.TryGetValue(module.identifier, out var row)
                             && row.Tag is GUIMod gmod)
                         {
                             gmod.SelectedMod = module;
-                            marked = true;
                         }
                         else
                         {
@@ -152,8 +162,10 @@ namespace CKAN.GUI
                     }
                 });
 
+                ManageMods.MarkModsForReinstall(plan.Reinstall);
+
                 // Take user to changeset screen.
-                if (marked)
+                if (plan.Any)
                 {
                     tabController.ShowTab(ChangesetTabPage.Name, 1);
                 }

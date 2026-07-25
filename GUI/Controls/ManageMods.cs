@@ -1509,20 +1509,37 @@ namespace CKAN.GUI
                 is { Length: > 0 } and var modules
                 && currentInstance != null)
             {
-                var registry = RegistryManager.Instance(currentInstance, repoData).registry;
-                var config = ServiceLocator.Container.Resolve<IConfiguration>();
-                StartChangeSet?.Invoke(
-                    modules.Select(module =>
-                                       // "Upgrade" to latest metadata for same module version
-                                       // (avoids removing and re-installing dependencies)
-                                       new ModReinstall(registry.GetModuleByVersion(module.identifier,
-                                                                                    module.version)
-                                                        ?? module,
-                                                        true, false, true, config)
-                                       as ModChange)
-                           .ToList(),
-                    null);
+                StartChangeSet?.Invoke(ReinstallChanges(modules, currentInstance).ToList(), null);
             }
+        }
+
+        /// <summary>
+        /// Re-install mods. Adds to the current changeset.
+        /// </summary>
+        public void MarkModsForReinstall(ICollection<CkanModule> modules)
+        {
+            if (modules.Count > 0 && currentInstance != null)
+            {
+                var existing = currentChangeSet ?? Enumerable.Empty<ModChange>();
+                var changes = existing.Concat(ReinstallChanges(modules, currentInstance)).ToList();
+
+                StartChangeSet?.Invoke(changes, Conflicts);
+            }
+        }
+
+        private IEnumerable<ModChange> ReinstallChanges(IEnumerable<CkanModule> modules, GameInstance instance)
+        {
+            var registry = RegistryManager.Instance(instance, repoData).registry;
+            var config = ServiceLocator.Container.Resolve<IConfiguration>();
+
+            return modules.Select(module =>
+                                      // "Upgrade" to latest metadata for same module version
+                                      // (avoids removing and re-installing dependencies)
+                                      new ModReinstall(registry.GetModuleByVersion(module.identifier,
+                                                                                   module.version)
+                                                       ?? module,
+                                                       true, false, true, config)
+                                      as ModChange);
         }
 
         [ForbidGUICalls]

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using log4net;
 
@@ -21,6 +22,7 @@ namespace CKAN.ConsoleUI {
             ProtocolRouter.OnFocus += HandleProtocolFocus;
             ProtocolRouter.OnSearch += HandleProtocolSearch;
             ProtocolRouter.OnInstall += HandleProtocolInstall;
+            ProtocolRouter.OnError += HandleProtocolError;
 
             ProtocolRouter.HandlePendingLaunchUrl();
 
@@ -31,7 +33,14 @@ namespace CKAN.ConsoleUI {
                 ProtocolRouter.OnFocus -= HandleProtocolFocus;
                 ProtocolRouter.OnSearch -= HandleProtocolSearch;
                 ProtocolRouter.OnInstall -= HandleProtocolInstall;
+                ProtocolRouter.OnError -= HandleProtocolError;
             }
+        }
+
+        private void HandleProtocolError(UrlError error)
+        {
+            urlLog.DebugFormat("Cannot handle URL: {0}", error);
+            PostToModList(() => RaiseError("{0}", ProtocolRouter.ErrorMessage(error)));
         }
 
         private void PostToModList(Action action)
@@ -51,7 +60,7 @@ namespace CKAN.ConsoleUI {
             PostToModList(() => {
 
                 // Clear search filter that might hide the mod.
-                SetSearch("");
+                searchBox.Clear();
 
                 if (moduleList.SelectItem(m => string.Equals(m.identifier, identifier,
                                                              StringComparison.OrdinalIgnoreCase))) {
@@ -63,47 +72,40 @@ namespace CKAN.ConsoleUI {
         private void HandleProtocolSearch(string query)
         {
             urlLog.DebugFormat("Search requested: {0}", query);
-            PostToModList(() => SetSearch(query));
+            PostToModList(() => searchBox.SetValue(query));
         }
 
         private void HandleProtocolInstall(List<(string Mod, string? Version)> mods)
         {
-            urlLog.DebugFormat("Install requested: {0}", string.Join(", ", mods.ConvertAll(m => m.Mod)));
+            urlLog.DebugFormat("Install requested: {0}", string.Join(", ", mods.Select(m => m.Mod)));
 
             PostToModList(() => {
                 if (manager.CurrentInstance == null) {
+                    urlLog.Debug("Instance not loaded. Cannot mark anything for install");
                     return;
                 }
 
-                bool installAny = false;
+                var inst = manager.CurrentInstance;
+                var crit = inst.VersionCriteria();
 
-                var resolved = InstallResolver.Resolve(mods, registry,
-                                                       manager.CurrentInstance.StabilityToleranceConfig,
-                                                       manager.CurrentInstance.VersionCriteria());
-                foreach (var (query, module, outcome) in resolved) {
-                    if (module == null || outcome == InstallOutcome.Incompatible) {
-                        urlLog.DebugFormat("Skipping {0}: {1}", query, outcome);
-                        continue;
-                    }
+                var resolved = InstallResolver.Resolve(mods, registry, inst.StabilityToleranceConfig, crit);
+                var confirmed = InstallUrlPrompt.Confirm(resolved, this, inst.Game.ShortName,
+                                                         crit.ToSummaryString(inst.Game));
 
-                    // Add rather than toggle so that repeated links accumulate.
-                    plan.Install.Add(module);
-                    installAny = true;
+                foreach (var module in confirmed.Install) {
+                    plan.Install.Add(module); // Repeated links accumulate.
                 }
 
-                if (installAny) {
+                foreach (var module in confirmed.Reinstall) {
+                    // Console UI doesn't have reinstall in the same way GUI does. Seems to work but might not be ideal?
+                    plan.Remove.Add(module.identifier);
+                    plan.Install.Add(module);
+                }
+
+                if (confirmed.Any) {
                     ApplyChanges();
                 }
             });
-        }
-
-        private void SetSearch(string text)
-        {
-            searchBox.Value = text;
-            searchBox.Position = text.Length;
-
-            // Assigning Value doesn't fire OnChange, so set the filter too.
-            moduleList.FilterString = text;
         }
     }
 }
