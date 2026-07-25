@@ -100,6 +100,16 @@ namespace CKAN.IO
 
             cancellationToken.Cancel();
 
+            // Mono on Linux ignores the Cancel token once WaitForConnectionAsync is waiting.
+            // Therefore connect to complete the wait instead.
+            try
+            {
+                using var client = new NamedPipeClientStream(".", Name, PipeDirection.Out);
+                await client.ConnectAsync(50);
+            }
+            catch
+            { }
+
             try
             {
                 if (serverTask != null)
