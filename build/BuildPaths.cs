@@ -62,10 +62,7 @@ public class BuildPaths
         UrlHandlerAotStub = OutDirectory
             .Combine("CKAN-URLHandler")
             .Combine(configuration)
-            .Combine("bin")
-            .Combine("net10.0")
-            .Combine("win-x64")
-            .Combine("publish")
+            .Combine("aot")
             .CombineWithFilePath("CKAN-URLHandler.exe");
     }
 }

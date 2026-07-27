@@ -187,17 +187,15 @@ public sealed class RepackCkanTask : FrostingTask<BuildContext>
         if (context.IsRunningOnWindows())
         {
             context.CreateDirectory(repackPath);
-
             // Publish the URL handler with Native AOT for embedding in ckan-windows.exe below.
-            // Requires the MSVC toolchain on the build agent.
+            // Requires MSVC on Windows.
             context.DotNetPublish(context.Paths.UrlHandlerProject.FullPath,
                                   new DotNetPublishSettings
                                   {
-                                      Configuration = context.BuildConfiguration,
-                                      Framework     = context.BuildDotNet,
-                                      Runtime       = "win-x64",
+                                      Configuration   = context.BuildConfiguration,
+                                      Framework       = context.BuildDotNet,
+                                      OutputDirectory = context.Paths.UrlHandlerAotStub.GetDirectory(),
                                   });
-
             // Publish single file Windows .NET 10 build for dark theme
             context.DotNetPublish(context.Paths.CmdlineProject.FullPath,
                                   new DotNetPublishSettings
@@ -208,11 +206,9 @@ public sealed class RepackCkanTask : FrostingTask<BuildContext>
                                       PublishSingleFile = true,
                                       SelfContained     = true,
                                       MSBuildSettings   = new DotNetMSBuildSettings()
-                                          .WithProperty("EmbedAotUrlHandlerStub", "true")
                                           .WithProperty("AotUrlHandlerStubPath",
                                                         context.Paths.UrlHandlerAotStub.FullPath),
                                   });
-
             context.CopyFile(context.Paths.OutDirectory.Combine("CKAN-CmdLine")
                                                        .Combine(context.BuildConfiguration)
                                                        .Combine("bin")
