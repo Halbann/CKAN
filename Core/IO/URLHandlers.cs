@@ -213,7 +213,7 @@ namespace CKAN.IO
 
             // gio launch opens the user's terminal without us hardcoding anything.
             // gio is from glib2 so it is practically always available.
-            if (RunCommand("gio", $"launch \"{path}\" \"{url}\""))
+            if (RunCommand("gio", $"launch \"{path}\" \"{url}\"", redirect: false))
             {
                 return true;
             }
@@ -224,7 +224,7 @@ namespace CKAN.IO
         }
 
         // Returns true if the command ran and succeeded.
-        private static bool RunCommand(string command, string args)
+        private static bool RunCommand(string command, string args, bool redirect = true)
         {
             try
             {
@@ -234,12 +234,12 @@ namespace CKAN.IO
                     FileName               = command,
                     Arguments              = args,
                     UseShellExecute        = false,
-                    RedirectStandardError  = true,
-                    RedirectStandardOutput = true,
+                    RedirectStandardError  = redirect,
+                    RedirectStandardOutput = redirect,
                 });
                 if (process != null)
                 {
-                    var stderr = process.StandardError.ReadToEnd();
+                    var stderr = redirect ? process.StandardError.ReadToEnd() : "";
                     process.WaitForExit();
                     if (process.ExitCode != 0)
                     {
