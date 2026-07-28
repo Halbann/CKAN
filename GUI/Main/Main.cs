@@ -155,9 +155,6 @@ namespace CKAN.GUI
             ActiveModInfo = null;
 
             WireProtocolRouter();
-
-            // URL handlers can't be invoked on the UI thread until the window handle is created.
-            HandleCreated += (sender, e) => URLPipe.StartServer();
         }
 
         protected override void OnLoad(EventArgs e)
@@ -181,6 +178,7 @@ namespace CKAN.GUI
             WindowState = configuration.IsWindowMaximised ? FormWindowState.Maximized : FormWindowState.Normal;
 
             URLHandlers.RegisterURLHandler("gui");
+            URLPipe.StartServer();
 
             Util.Invoke(this, () => Text = $"CKAN {Meta.GetVersion()}");
 
