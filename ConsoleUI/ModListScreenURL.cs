@@ -17,7 +17,7 @@ namespace CKAN.ConsoleUI {
         /// <summary>
         /// Run the screen with the ckan:// handlers subscribed.
         /// </summary>
-        protected override void RunScreen(Action? process)
+        public override void Run(Action? process = null)
         {
             ProtocolRouter.OnFocus += HandleProtocolFocus;
             ProtocolRouter.OnSearch += HandleProtocolSearch;
@@ -27,7 +27,7 @@ namespace CKAN.ConsoleUI {
             ProtocolRouter.HandlePendingLaunchUrl();
 
             try {
-                base.RunScreen(process);
+                base.Run(process);
             }
             finally {
                 ProtocolRouter.OnFocus -= HandleProtocolFocus;
@@ -44,13 +44,7 @@ namespace CKAN.ConsoleUI {
         }
 
         private void PostToModList(Action action)
-        {
-            if (Current == this) {
-                ConsoleInput.Post(action);
-            } else {
-                urlLog.Debug("Ignoring URL because another screen is running");
-            }
-        }
+            => ConsoleInput.Post(action, this); // Automatically dropped if the top most screen is not this ModListScreen.
 
         private void HandleProtocolFocus(string identifier)
         {

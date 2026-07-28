@@ -6,11 +6,9 @@ namespace CKAN.ConsoleUI.Toolkit {
 
     /// <summary>
     /// The console UI's input source.
-    /// A background thread blocks in Console.ReadKey and queues each keystroke
-    /// (that thread can never be stopped because Console.ReadKey can't be interrupted).
     ///
-    /// Other threads can post actions onto the same queue to run them on the UI thread.
-    /// NextKey runs posted actions inline while waiting for the next keystroke.
+    /// A background thread blocks in Console.ReadKey and queues each keystroke.
+    /// The UI thread blocks on the queue, waiting for either a keystroke or an action to come in from other threads.
     ///
     /// Originally added so that we can respond to the URL handler pipe while waiting on input.
     /// </summary>
@@ -37,30 +35,34 @@ namespace CKAN.ConsoleUI.Toolkit {
         /// Run an action on the UI thread. Safe to call from any thread.
         /// </summary>
         /// <param name="action">Work to run on the UI thread</param>
-        public static void Post(Action action)
+        /// <param name="owner">The screen the action belongs to</param>
+        public static void Post(Action action, object owner)
         {
-            queue.Add(new Event(null, action));
+            queue.Add((null, action, owner));
         }
 
         /// <summary>
         /// Block until the next event and pump it. Runs a posted action or returns a keystroke.
-        /// For loops that redraw between events.
+        /// Actions belonging to another owner are discarded.
         /// </summary>
-        /// <returns>The keystroke, or null if a posted action ran instead</returns>
-        public static ConsoleKeyInfo? PumpEvent()
+        /// <param name="owner">The screen that's pumping, or null to discard every posted action</param>
+        /// <returns>The keystroke, or null if a posted action came up instead</returns>
+        public static ConsoleKeyInfo? PumpEvent(object? owner = null)
         {
             var ev = queue.Take();
             if (ev.Key is ConsoleKeyInfo k) {
                 return k;
             }
 
-            ev.Action?.Invoke();
+            if (ev.Owner == owner) {
+                ev.Action?.Invoke();
+            }
+
             return null;
         }
 
         /// <summary>
-        /// Block until the next keystroke, running any posted actions in the meantime.
-        /// For callers that just need a keystroke and have nothing to repaint.
+        /// Convenience method that blocks until the next keystroke, silently discarding any posted actions in the meantime.
         /// </summary>
         /// <returns>The next keystroke</returns>
         public static ConsoleKeyInfo NextKey()
@@ -75,26 +77,17 @@ namespace CKAN.ConsoleUI.Toolkit {
         private static void ReadLoop()
         {
             while (true) {
-                queue.Add(new Event(Console.ReadKey(true), null));
+                // There's no way to interrupt this thread while it's in ReadKey.
+                // That breaks going from ckan prompt to consoleui and back to ckan prompt.
+                // Another option might be polling every X ms, but it's
+                // probably not worth it for that rare use case.
+                queue.Add((Console.ReadKey(true), null, null));
             }
         }
 
-        /// <summary>
-        /// A queued keystroke or posted action.
-        /// </summary>
-        private sealed class Event {
-            public readonly ConsoleKeyInfo? Key;
-            public readonly Action? Action;
-
-            public Event(ConsoleKeyInfo? key, Action? action)
-            {
-                Key = key;
-                Action = action;
-            }
-        }
-
-        private static readonly BlockingCollection<Event> queue
-            = new BlockingCollection<Event>(new ConcurrentQueue<Event>());
+        // BlockingCollection defaults to ConcurrentQueue, which is FIFO.
+        private static readonly BlockingCollection<(ConsoleKeyInfo? Key, Action? Action, object? Owner)> queue
+            = new BlockingCollection<(ConsoleKeyInfo? Key, Action? Action, object? Owner)>();
 
         private static Thread? readerThread;
     }

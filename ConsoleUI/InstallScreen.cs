@@ -48,7 +48,7 @@ namespace CKAN.ConsoleUI {
         /// Run the screen
         /// </summary>
         /// <param name="process">Framework parameter not used by this object</param>
-        protected override void RunScreen(Action? process)
+        public override void Run(Action? process = null)
         {
             var rejected = new HashSet<CkanModule>();
             DrawBackground();

@@ -13,10 +13,11 @@ namespace Tests.ConsoleUI
         [Test]
         public void PumpEvent_PostedAction_RunsAndReturnsNull()
         {
+            var owner = new object();
             bool ran = false;
-            ConsoleInput.Post(() => ran = true);
+            ConsoleInput.Post(() => ran = true, owner);
 
-            var key = ConsoleInput.PumpEvent();
+            var key = ConsoleInput.PumpEvent(owner);
 
             Assert.IsNull(key);
             Assert.IsTrue(ran);
@@ -25,16 +26,29 @@ namespace Tests.ConsoleUI
         [Test]
         public void PumpEvent_MultiplePostedActions_RunInOrder()
         {
+            var owner = new object();
             var order = new List<int>();
-            ConsoleInput.Post(() => order.Add(1));
-            ConsoleInput.Post(() => order.Add(2));
-            ConsoleInput.Post(() => order.Add(3));
+            ConsoleInput.Post(() => order.Add(1), owner);
+            ConsoleInput.Post(() => order.Add(2), owner);
+            ConsoleInput.Post(() => order.Add(3), owner);
 
-            ConsoleInput.PumpEvent();
-            ConsoleInput.PumpEvent();
-            ConsoleInput.PumpEvent();
+            ConsoleInput.PumpEvent(owner);
+            ConsoleInput.PumpEvent(owner);
+            ConsoleInput.PumpEvent(owner);
 
             CollectionAssert.AreEqual(new[] { 1, 2, 3 }, order);
+        }
+
+        [Test]
+        public void PumpEvent_AnotherOwnerPumping_DropsAction()
+        {
+            bool ran = false;
+            ConsoleInput.Post(() => ran = true, new object());
+
+            var key = ConsoleInput.PumpEvent(new object());
+
+            Assert.IsNull(key);
+            Assert.IsFalse(ran);
         }
     }
 }

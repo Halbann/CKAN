@@ -24,29 +24,10 @@ namespace CKAN.ConsoleUI.Toolkit {
         }
 
         /// <summary>
-        /// The screen or dialog that's currently running.
-        /// </summary>
-        internal static ScreenContainer? Current { get; private set; }
-
-        /// <summary>
-        /// Updates Current and calls RunScreen.
+        /// Draw the contained screen objects and manage their interaction
         /// </summary>
         /// <param name="process">Logic to drive the screen, default is normal user interaction</param>
-        public void Run(Action? process = null)
-        {
-            var previous = Current;
-            Current = this;
-
-            RunScreen(process);
-
-            Current = previous;
-        }
-
-        /// <summary>
-        /// Draw the contained screen objects and manage their interaction. Does not update Current.
-        /// </summary>
-        /// <param name="process">Logic to drive the screen, default is normal user interaction</param>
-        protected virtual void RunScreen(Action? process)
+        public virtual void Run(Action? process = null)
         {
             DrawBackground();
 
@@ -172,8 +153,7 @@ namespace CKAN.ConsoleUI.Toolkit {
 
             do {
                 Draw();
-                if (ConsoleInput.PumpEvent() is not ConsoleKeyInfo k) {
-                    // A posted action ran. Redraw and wait again.
+                if (ConsoleInput.PumpEvent(this) is not ConsoleKeyInfo k) {
                     continue;
                 }
                 if (bindings.TryGetValue(k, out KeyAction? screenBinding)) {
