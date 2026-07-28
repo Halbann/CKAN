@@ -19,10 +19,8 @@ namespace CKAN.IO
         public static event Action<List<(string Mod, string? Version)>>? OnInstall;
         public static event Action<UrlError>? OnError;
 
-        // --url value set by cmdline. Only read by HandlePendingLaunchUrl.
-        public static string? PendingLaunchUrl { internal get; set; }
-
-        public static bool HasPendingLaunchUrl => PendingLaunchUrl != null;
+        // --url value set by cmdline.
+        public static string? PendingLaunchUrl { get; set; }
 
         public static string ErrorMessage(UrlError error)
             => error switch
@@ -42,7 +40,6 @@ namespace CKAN.IO
 
         public static void Handle(string? rawUrl)
         {
-            // Double null check to appease compiler.
             if (rawUrl == null || string.IsNullOrWhiteSpace(rawUrl))
             {
                 return;
@@ -67,10 +64,10 @@ namespace CKAN.IO
             switch (uri.Host)
             {
                 case "focus":
-                    RouteValue(query["mod"], OnFocus);
+                    RouteValue(query.GetValues("mod"), OnFocus);
                     break;
                 case "search":
-                    RouteValue(query["q"], OnSearch);
+                    RouteValue(query.GetValues("q"), OnSearch);
                     break;
                 case "install":
                     RouteMods(query.GetValues("mod"), OnInstall);
@@ -81,23 +78,18 @@ namespace CKAN.IO
             }
         }
 
-        private static void RouteValue(string? value, Action<string>? handler)
+        private static void RouteValue(string[]? values, Action<string>? handler)
         {
-            // We expect one value at this point, but the URL could include multiple, and they will end up here as CSV.
+            // A URL could repeat a key. We only want the first value.
+            var value = values?.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
 
-            if (value != null)
+            if (value == null)
             {
-                int comma = value.IndexOf(',');
-                string first = (comma >= 0 ? value[..comma] : value).Trim();
-
-                if (first.Length > 0)
-                {
-                    handler?.Invoke(first);
-                    return;
-                }
+                OnError?.Invoke(UrlError.NoValidKeys);
+                return;
             }
 
-            OnError?.Invoke(UrlError.NoValidKeys);
+            handler?.Invoke(value.Trim());
         }
 
         private static void RouteMods(string[]? modValues, Action<List<(string Mod, string? Version)>>? handler)

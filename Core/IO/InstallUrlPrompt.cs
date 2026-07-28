@@ -23,7 +23,7 @@ namespace CKAN.IO
 
     public static class InstallUrlPrompt
     {
-        /// <summary>Tell the user what things in the install URL can't be done, and ask about potentially dangerous things.</summary>
+        /// <summary>Tell the user about anything in the install URL that can't be done, and ask about potentially dangerous things.</summary>
         /// <returns>The mods to mark for install and re-install. This method doesn't do anything by itself.</returns>
         public static InstallUrlPlan Confirm(
             List<ResolvedMod> resolved,

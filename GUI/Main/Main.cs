@@ -470,9 +470,8 @@ namespace CKAN.GUI
 
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
-            UnwireProtocolRouter();
-            // Don't wait for the pipe server to finish shutting down. The process is exiting anyway.
-            _ = URLPipe.StopServer();
+            UnwireProtocolRouter();            
+            _ = URLPipe.StopServer(); // Don't await the pipe server shutdown. Process is exiting anyway.
 
             if (CurrentInstance != null)
             {
@@ -1049,9 +1048,7 @@ namespace CKAN.GUI
                             HideWaitDialog();
                             EnableMainWindow();
                             SetupDefaultSearch();
-
                             ProtocolRouter.HandlePendingLaunchUrl();
-
                             break;
                     }
                 },

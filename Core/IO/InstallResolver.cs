@@ -42,19 +42,19 @@ namespace CKAN.IO
             GameVersionCriteria versions)
         {
             // Matching is case insensitive so a hand written URL needn't have perfect capitalisation.
-            // The spec requires identifiers to be unique regardless of case.
-            // Assigning in a loop lets it tolerate duplicates.
+            // The spec requires identifiers to be unique regardless of case.            
             var find = new Dictionary<string, (string Query, string? Version)>(StringComparer.OrdinalIgnoreCase);
             foreach (var (mod, version) in mods)
             {
-                find[mod] = (mod, version);
+                find[mod] = (mod, version); // Tolerate duplicates by re-assignment. The equivelant LINQ is ugly.
             }
 
             var found = new Dictionary<string, ResolvedMod>(StringComparer.OrdinalIgnoreCase);
 
+            // Remove target mods from find and add to found as they are found with compatible modules.
             TakeMatches(registry.CompatibleModules(stability, versions), true, find, found, registry, versions);
 
-            // Any remaining mods may be incompatible, so check those.
+            // Any remaining mods may be incompatible, so check those too.
             if (find.Count > 0)
             {
                 TakeMatches(registry.IncompatibleModules(stability, versions), false, find, found, registry, versions);

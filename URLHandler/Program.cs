@@ -11,7 +11,7 @@ using Microsoft.Win32.SafeHandles;
 // popup on launch. Doing that every time a ckan URL opens is ugly and looks dodgy.
 
 // This stub is a WinExe instead, so no popup.
-// Called via reg as `ckan-urlhandler.exe <path to ckan.exe> <verb> <url>`. It sends the url to the
+// Called via reg as `ckan-urlhandler.exe <path to ckan.exe> <verb> <pipe name> <url>`. It sends the url to the
 // running CKAN over the pipe, or starts CKAN with `<verb> --url <url> --no-handoff`.
 
 // Must not reference anything outside the BCL so that it can be compiled
@@ -28,7 +28,11 @@ namespace CKAN.URLHandler
             // <path to ckan.exe> <verb> <pipe name> <url>.
             // The verb is whichever UI registered last. CKAN passes its own pipe name so the two can't drift.
 
-            if (args.Length != 4 || string.IsNullOrWhiteSpace(args[0]) || string.IsNullOrWhiteSpace(args[2]) || string.IsNullOrWhiteSpace(args[3]))
+            if (args.Length != 4
+                || string.IsNullOrWhiteSpace(args[0])
+                || string.IsNullOrWhiteSpace(args[1])
+                || string.IsNullOrWhiteSpace(args[2])
+                || string.IsNullOrWhiteSpace(args[3]))
             {
                 return 1;
             }
@@ -47,7 +51,7 @@ namespace CKAN.URLHandler
             return (TrySendToRunningInstance(pipeName, url) || LaunchCKAN(ckanExe, verb, url)) ? 0 : 1;
         }
 
-        // Duplicates URLPipe.TrySend because this project can't reference Core.
+        // Loosely duplicates URLPipe.TrySend because this project can't reference Core.
         // Necessary to make the url handler as small as possible.
         private static bool TrySendToRunningInstance(string pipeName, string url)
         {
@@ -83,7 +87,7 @@ namespace CKAN.URLHandler
                     FileName = ckanExe,
                     Arguments = $"{verb} --url \"{url}\" --no-handoff", // no-handoff: skip double TrySend.
                     UseShellExecute = false,
-                    CreateNoWindow = verb == "gui",
+                    CreateNoWindow = verb == "gui", // Prevents a console flash.
                 });
 
                 // Same foreground rights handoff as the pipe path.

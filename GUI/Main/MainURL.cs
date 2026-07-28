@@ -94,7 +94,7 @@ namespace CKAN.GUI
                 // Clear any search that might be hiding the mod.
                 ManageMods.SetSearches(new List<ModSearch>());
 
-                ManageMods.FocusMod(identifier, true, true);
+                ManageMods.FocusMod(identifier, exactMatch: true, showAsFirst: true);
                 RaiseToForeground();
             });
         }
@@ -106,18 +106,23 @@ namespace CKAN.GUI
 
             InvokeIfReady(() =>
             {
-                if (CurrentInstance != null)
+                if (CurrentInstance == null)
                 {
-                    tabController.ShowTab(ManageModsTabPage.Name);
-
-                    var search = ModSearch.Parse(ModuleLabelList.ModuleLabels, CurrentInstance, query);
-                    if (search != null)
-                    {
-                        ManageMods.SetSearches(new List<ModSearch> { search });
-                    }
-
-                    RaiseToForeground();
+                    urlLog.Warn("Instance not loaded. Cannot search");
+                    return;
                 }
+
+                tabController.ShowTab(ManageModsTabPage.Name);
+                RaiseToForeground();
+
+                var search = ModSearch.Parse(ModuleLabelList.ModuleLabels, CurrentInstance, query);
+                if (search == null)
+                {
+                    urlLog.WarnFormat("Could not parse search: {0}", query);
+                    return;
+                }
+
+                ManageMods.SetSearches(new List<ModSearch> { search });
             });
         }
 
@@ -169,9 +174,9 @@ namespace CKAN.GUI
                             urlLog.WarnFormat("No mod list row for {0}. Cannot mark for install", module.identifier);
                         }
                     }
-                });
 
-                ManageMods.MarkModsForReinstall(plan.Reinstall);
+                    ManageMods.MarkModsForReinstall(plan.Reinstall);
+                });
 
                 // Take user to changeset screen.
                 if (plan.Any)

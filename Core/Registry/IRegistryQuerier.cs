@@ -161,11 +161,10 @@ namespace CKAN
 
         /// <summary>
         /// Like GetModuleByVersion, but tolerates a version that differs only by its epoch or a leading v.
-        /// CKAN hides both when it displays a version, which would otherwise confusion for users creating ckan:// links.
+        /// We hide both when displaying a version, which, without this tolerance, could cause confusion for users creating ckan:// links.
         /// </summary>
         public static CkanModule? GetModuleByVersionTolerant(this IRegistryQuerier querier, string ident, string version)
         {
-            // DefaultIfThrows turns ModuleNotFoundKraken exception into null. 
             List<CkanModule>? available = Utilities.DefaultIfThrows(() => querier.AvailableByIdentifier(ident).ToList());
             if (available == null)
             {

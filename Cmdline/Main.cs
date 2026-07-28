@@ -73,8 +73,8 @@ namespace CKAN.CmdLine
             }
             log.Info("CKAN started.");
 
-            // Try to hand --url to a running instance over the pipe before loading anything.
-            // no-handoff: skip the pipe because the caller already checked (Windows) (saves 50 ms).
+            // Try to hand the value of --url to a running instance over the pipe before loading anything.
+            // no-handoff: skip this because the caller already checked that this is the cold case (saves 50 ms).
             var urlIndex = Array.IndexOf(args, "--url");
             if (urlIndex >= 0 && urlIndex + 1 < args.Length && !args.Contains("--no-handoff"))
             {
@@ -86,7 +86,8 @@ namespace CKAN.CmdLine
                 }
                 log.Info("No running instance found. Launching");
 
-                // The console UI can't draw without a terminal, and a desktop entry launch has none.
+                // On Linux, URL handler's .desktop file has Terminal=false to hide a terminal flash in the warm case.
+                // This is the cold case, and the console UI can't draw without a terminal, so restart with a terminal.
                 if (Platform.IsUnix && args[0] == "consoleui"
                     && Console.IsInputRedirected && Console.IsOutputRedirected
                     && URLHandlers.RelaunchConsoleUIInTerminal(url))

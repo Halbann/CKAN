@@ -6,10 +6,11 @@ using CKAN.ConsoleUI.Toolkit;
 
 namespace Tests.ConsoleUI
 {
-    // Start() is never called because it blocks in Console.ReadKey.
     [TestFixture]
     public class ConsoleInputTests
     {
+        // ConsoleInput.Start() is never called because it blocks in Console.ReadKey.
+
         [Test]
         public void PumpEvent_PostedAction_RunsAndReturnsNull()
         {

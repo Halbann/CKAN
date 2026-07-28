@@ -374,14 +374,13 @@ namespace CKAN.ConsoleUI.Toolkit {
         }
 
         /// <summary>
-        /// Move the highlight to the first matching row. Hidden rows are ignored.
+        /// Move the highlight to the first matching filtered row.
         /// </summary>
         /// <param name="predicate">Test identifying the row to highlight</param>
         /// <returns>True if a matching row was found and selected, false otherwise</returns>
         public bool SelectItem(Func<RowT, bool> predicate)
         {
             int row = sortedFilteredData.FindIndex(r => predicate(r));
-
             if (row >= 0) {
                 selectedRow = row;
                 SelectionChanged?.Invoke();

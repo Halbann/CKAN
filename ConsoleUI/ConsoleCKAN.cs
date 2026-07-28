@@ -27,7 +27,7 @@ namespace CKAN.ConsoleUI {
             if (ConsoleTheme.Themes.TryGetValue(themeName ?? "default", out ConsoleTheme? theme))
             {
                 // Start the key reader thread. Input goes through a queue so that
-                // other threads can post work onto the UI thread.
+                // other threads can post actions onto the UI thread.
                 ConsoleInput.Start();
 
                 var repoData = ServiceLocator.Container.Resolve<RepositoryDataManager>();
@@ -39,11 +39,10 @@ namespace CKAN.ConsoleUI {
                                               ?? new GameInstanceManager(new NullUser(),
                                                                          ServiceLocator.Container.Resolve<IConfiguration>());
 
-                // Register CKAN as the ckan:// URL handler.
+                // Register ckan:// URL handler.
                 URLHandlers.RegisterURLHandler("consoleui");
 
-                // Listen for ckan:// URLs from other CKAN processes.
-                // URLs arriving before ModListScreen subscribes are dropped.
+                // Begin listening for URL handoffs.
                 URLPipe.StartServer();
 
                 // The splash screen returns true when it's safe to run the rest of the app.
@@ -72,7 +71,7 @@ namespace CKAN.ConsoleUI {
                     new ExitScreen().Run(theme);
                 }
 
-                // Don't wait for the pipe server to finish shutting down. The process is exiting anyway.
+                // Don't await the shut down because the process is exiting.
                 _ = URLPipe.StopServer();
             }
             else

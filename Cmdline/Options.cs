@@ -399,13 +399,12 @@ namespace CKAN.CmdLine
     internal class PromptOptions    : CommonOptions { }
     internal class CleanOptions     : InstanceSpecificOptions { }
 
-    // Options for the verbs that launch a UI and can receive a ckan:// URL.
     internal class UIOptions : InstanceSpecificOptions
     {
         [Option("url", HelpText = "A ckan:// URL to handle once the UI is loaded")]
         public string? Url { get; set; }
 
-        [Option("no-handoff", DefaultValue = false, HelpText = "Handle any --url option here rather than try to hand it to a running UI")]
+        [Option("no-handoff", DefaultValue = false, HelpText = "Handle the value of --url here, even if another UI is already running")]
         public bool NoHandoff { get; set; }
     }
 

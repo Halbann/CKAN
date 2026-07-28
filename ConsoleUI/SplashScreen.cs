@@ -39,7 +39,7 @@ namespace CKAN.ConsoleUI {
                 Console.CursorVisible = true;
                 return false;
             }
-            if (!ProtocolRouter.HasPendingLaunchUrl) {
+            if (ProtocolRouter.PendingLaunchUrl == null) {
                 // Draw screen with press any key
                 Draw(theme, true);
                 // Wait for a key

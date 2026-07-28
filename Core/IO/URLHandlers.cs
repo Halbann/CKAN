@@ -45,7 +45,7 @@ namespace CKAN.IO
         }
 
         // uiCommand is the verb of the calling UI (gui or consoleui). A cold ckan:// click
-        // launches that UI, so whichever one registered last is the one links open.
+        // launches that UI, so whichever one registered last is the one that links open.
         public static void RegisterURLHandler(string uiCommand)
         {
             try
@@ -59,7 +59,7 @@ namespace CKAN.IO
                     RegisterURLHandler_Win32(uiCommand);
                 }
 
-                // todo: macOS URL handler is defined CKAN.app info.plist but commented out until we can receive the apple event.
+                // todo: macOS URL handler is defined in macosx/Info.plist.in but commented out until we can receive the apple event.
             }
             catch (Exception ex)
             {
@@ -128,7 +128,6 @@ namespace CKAN.IO
             Directory.CreateDirectory(dir);
             var stubPath = Path.Combine(dir, WindowsHandlerExeName);
 
-            // Read all bytes of embedded url handler.
             using var ms = new MemoryStream();
             resource.CopyTo(ms);
             var wanted = ms.ToArray();
@@ -149,13 +148,12 @@ namespace CKAN.IO
         {
             log.InfoFormat("Trying to register URL handler");
 
-            // Terminal=false even for the console UI because a Terminal=true handler would flash a terminal on warm handoff.
-            // Console UI cold start gets relaunched instead. See RelaunchConsoleUIInTerminal.
-
             string handlerExec = $"mono \"{PathToRunningExe()}\" {uiCommand} --url %u";
             string handlerPath = Path.Combine(ApplicationsPath, LinuxHandlerFilename);
 
-            if (WriteDesktopEntry(handlerPath, DesktopEntry("CKAN Launcher", handlerExec, false, true)))
+            // Terminal=false even for the console UI because a Terminal=true handler would flash a terminal on warm handoff.
+            // Console UI cold start gets relaunched instead. See RelaunchConsoleUIInTerminal.
+            if (WriteDesktopEntry(handlerPath, DesktopEntry("CKAN Launcher", handlerExec, terminal: false, scheme: true)))
             {
                 RunCommand("xdg-mime", $"default {LinuxHandlerFilename} x-scheme-handler/ckan");
                 RunCommand("update-desktop-database", ApplicationsPath);
@@ -207,7 +205,8 @@ namespace CKAN.IO
         public static bool RelaunchConsoleUIInTerminal(string url)
         {
             // We know this is the cold case. --no-handoff skips retrying the pipe.
-            string entry = DesktopEntry("CKAN Console UI", $"mono \"{PathToRunningExe()}\" consoleui --url %u --no-handoff", true, false);
+            string command = $"mono \"{PathToRunningExe()}\" consoleui --url %u --no-handoff";
+            string entry = DesktopEntry("CKAN Console UI", command, terminal: true, scheme: false);
             string path = Path.Combine(ApplicationsPath, LinuxConsoleUIFilename);
             WriteDesktopEntry(path, entry);
 

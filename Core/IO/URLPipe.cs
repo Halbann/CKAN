@@ -17,7 +17,7 @@ namespace CKAN.IO
         public static string Name { get; internal set; } = $"CKAN_URL_PIPE_{Environment.UserName}";
 
         private static readonly ILog log = LogManager.GetLogger(typeof(URLPipe));
-        private static CancellationTokenSource? cancellationToken;
+        private static CancellationTokenSource? cancelTokenSrc;
         private static Task? serverTask;
 
         // Returns false if another instance already owns the pipe.
@@ -28,10 +28,10 @@ namespace CKAN.IO
                 return true;
             }
 
-            NamedPipeServerStream initialServer;
+            NamedPipeServerStream boundPipe;
             try
             {
-                initialServer = NewPipeServer();
+                boundPipe = NewPipeServer();
             }
             catch (IOException ex)
             {
@@ -39,23 +39,21 @@ namespace CKAN.IO
                 return false;
             }
 
-            cancellationToken = new CancellationTokenSource();
-            var token = cancellationToken.Token;
+            cancelTokenSrc = new CancellationTokenSource();
+            var token = cancelTokenSrc.Token;
 
             log.Debug("Starting URL pipe server task");
             serverTask = Task.Run(async () =>
             {
-                using var server = initialServer;
+                using var server = boundPipe;
                 while (true)
                 {
                     try
                     {
                         await server.WaitForConnectionAsync(token);
 
-                        using var reader = new StreamReader(server, Encoding.UTF8, true, 1024, leaveOpen: true);
+                        using var reader = new StreamReader(server, System.Text.Encoding.UTF8, true, 1024, leaveOpen: true);
                         var url = await reader.ReadLineAsync();
-
-                        server.Disconnect();
 
                         log.DebugFormat("Pipe received URL: {0}", url);
                         ProtocolRouter.Handle(url);
@@ -64,7 +62,7 @@ namespace CKAN.IO
                     {
                         return;
                     }
-                    // URL could come from anywhere so a failure here should probably not kill the server.
+                    // URL could come from anywhere so a failure here must not kill the server.
                     catch (Exception ex)
                     {
                         log.WarnFormat("URL pipe error: {0}", ex.Message);
@@ -93,12 +91,12 @@ namespace CKAN.IO
 
         public static async Task StopServer()
         {
-            if (cancellationToken == null)
+            if (cancelTokenSrc == null)
             {
                 return;
             }
 
-            cancellationToken.Cancel();
+            cancelTokenSrc.Cancel();
 
             // Mono on Linux ignores the Cancel token once WaitForConnectionAsync is waiting.
             // Therefore connect to complete the wait instead.
@@ -107,6 +105,7 @@ namespace CKAN.IO
                 using var client = new NamedPipeClientStream(".", Name, PipeDirection.Out);
                 await client.ConnectAsync(50);
             }
+            // The server is already gone if this times out, which is what we wanted anyway.
             catch
             { }
 
@@ -119,8 +118,8 @@ namespace CKAN.IO
             }
             finally
             {
-                cancellationToken.Dispose();
-                cancellationToken = null;
+                cancelTokenSrc.Dispose();
+                cancelTokenSrc = null;
                 serverTask = null;
             }
         }

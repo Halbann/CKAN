@@ -1516,7 +1516,7 @@ namespace CKAN.GUI
         }
 
         /// <summary>
-        /// Mark mods for re-install. Persists through updates to the changeset.
+        /// Mark mods for re-install. The marks survive changeset recalculation.
         /// </summary>
         public void MarkModsForReinstall(ICollection<CkanModule> modules)
         {
@@ -1529,7 +1529,8 @@ namespace CKAN.GUI
                         markedReinstalls.Add(module);
                     }
                 }
-                UpdateChangeSetAndConflicts(currentInstance, RegistryManager.Instance(currentInstance, repoData).registry);
+                var registry = RegistryManager.Instance(currentInstance, repoData).registry;
+                UpdateChangeSetAndConflicts(currentInstance, registry);
             }
         }
 

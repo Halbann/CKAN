@@ -65,8 +65,8 @@ namespace CKAN.CmdLine
                             // (in interactive mode the user can see the error and try again)
                             return cmdExitCode;
                         }
-                        // The console UI's key reader thread can't be stopped.
-                        // It would fight this loop for keystrokes.
+                        // The console UI's ConsoleInput.ReadLoop thread can't be stopped and will fight for input.
+                        // Exiting prompt here is an unfortunate workaround. See ConsoleInput.ReadLoop for an idea.
                         if (cmdArgs.FirstOrDefault() == "consoleui")
                         {
                             done = true;
