@@ -86,15 +86,14 @@ namespace CKAN.ConsoleUI {
                 var confirmed = InstallUrlPrompt.Confirm(resolved, this, inst.Game.ShortName,
                                                          crit.ToSummaryString(inst.Game));
 
-                foreach (var module in confirmed.Install) {
-                    plan.Install.Add(module); // Repeated links accumulate.
-                }
-
-                foreach (var module in confirmed.Reinstall) {
-                    // Console UI doesn't have reinstall in the same way GUI does. Seems to work but might not be ideal?
-                    plan.Remove.Add(module.identifier);
+                foreach (var module in confirmed.Install.Concat(confirmed.Reinstall)) {
+                    // Repeated links accumulate. A later link wins if it asks for another version.
+                    plan.RemoveInstall(module.identifier);
                     plan.Install.Add(module);
                 }
+
+                // Console UI doesn't have reinstall in the same way GUI does. Seems to work but might not be ideal?
+                plan.Remove.UnionWith(confirmed.Reinstall.Select(m => m.identifier));
 
                 if (confirmed.Any) {
                     ApplyChanges();
