@@ -46,6 +46,7 @@ namespace Tests.Core.IO
             Assert.IsEmpty(focused);
             Assert.IsEmpty(searched);
             Assert.IsEmpty(installed);
+            Assert.IsEmpty(errors);
         }
 
         [Test]
@@ -57,10 +58,10 @@ namespace Tests.Core.IO
             CollectionAssert.AreEqual(new[] { "JNSQ", "Astrogator" }, focused);
         }
 
-        [TestCase("focus?mod=JNSQ")]
-        public void Handle_AcceptsUrlWithoutCkanScheme(string input)
+        [Test]
+        public void Handle_AcceptsUrlWithoutCkanScheme()
         {
-            ProtocolRouter.Handle(input);
+            ProtocolRouter.Handle("focus?mod=JNSQ");
 
             CollectionAssert.AreEqual(new[] { "JNSQ" }, focused);
         }
@@ -70,11 +71,12 @@ namespace Tests.Core.IO
         [TestCase("ckan://focus?mod=")]
         [TestCase("ckan://focus?mod=   ")]
         [TestCase("ckan://focus?wrongkey=JNSQ")]
-        public void Handle_FocusWithoutValidMod_NoOp(string input)
+        public void Handle_FocusWithoutValidMod_RaisesNoValidKeys(string input)
         {
             ProtocolRouter.Handle(input);
 
             Assert.IsEmpty(focused);
+            CollectionAssert.AreEqual(new[] { UrlError.NoValidKeys }, errors);
         }
 
         [Test]
@@ -98,11 +100,12 @@ namespace Tests.Core.IO
         [TestCase("ckan://search?q=")]
         [TestCase("ckan://search?q=   ")]
         [TestCase("ckan://search?wrongkey=engine")]
-        public void Handle_SearchWithoutValidQ_NoOp(string input)
+        public void Handle_SearchWithoutValidQ_RaisesNoValidKeys(string input)
         {
             ProtocolRouter.Handle(input);
 
             Assert.IsEmpty(searched);
+            CollectionAssert.AreEqual(new[] { UrlError.NoValidKeys }, errors);
         }
 
         [Test]
@@ -160,11 +163,12 @@ namespace Tests.Core.IO
         [TestCase("ckan://install?mod=")]
         [TestCase("ckan://install?mod=&mod=   ")]
         [TestCase("ckan://install?wrongkey=JNSQ")]
-        public void Handle_InstallWithoutValidMods_NoOp(string input)
+        public void Handle_InstallWithoutValidMods_RaisesNoValidKeys(string input)
         {
             ProtocolRouter.Handle(input);
 
             Assert.IsEmpty(installed);
+            CollectionAssert.AreEqual(new[] { UrlError.NoValidKeys }, errors);
         }
 
         [Test]
@@ -182,27 +186,20 @@ namespace Tests.Core.IO
                 installed[0]);
         }
 
+        // The last two have no host, which is just as unknown as a wrong one.
         [TestCase("ckan://select?mod=JNSQ")]
         [TestCase("ckan://garbage")]
         [TestCase("ckan://JNSQ")]
-        public void Handle_UnknownOperation_NoOp(string input)
-        {
-            ProtocolRouter.Handle(input);
-
-            Assert.IsEmpty(focused);
-            Assert.IsEmpty(searched);
-            Assert.IsEmpty(installed);
-        }
-
         [TestCase("ckan://")]
         [TestCase("ckan:///?mod=JNSQ")]
-        public void Handle_NoOperation_NoOp(string input)
+        public void Handle_UnknownOperation_RaisesUnknownOperation(string input)
         {
             ProtocolRouter.Handle(input);
 
             Assert.IsEmpty(focused);
             Assert.IsEmpty(searched);
             Assert.IsEmpty(installed);
+            CollectionAssert.AreEqual(new[] { UrlError.UnknownOperation }, errors);
         }
 
         // Uri.TryCreate should reject these.
@@ -210,13 +207,14 @@ namespace Tests.Core.IO
         [TestCase("ckan://[")]
         [TestCase("ckan://foo bar")]
         [TestCase("ckan://a%zz")]
-        public void Handle_UnparseableUrl_NoOp(string input)
+        public void Handle_UnparseableUrl_RaisesBadSyntax(string input)
         {
             ProtocolRouter.Handle(input);
 
             Assert.IsEmpty(focused);
             Assert.IsEmpty(searched);
             Assert.IsEmpty(installed);
+            CollectionAssert.AreEqual(new[] { UrlError.BadSyntax }, errors);
         }
 
         [Test]
@@ -263,35 +261,6 @@ namespace Tests.Core.IO
             Assert.IsEmpty(focused);
             Assert.IsEmpty(searched);
             Assert.IsEmpty(installed);
-        }
-
-        [TestCase("ckan://a:b")]
-        [TestCase("ckan://[")]
-        [TestCase("ckan://foo bar")]
-        public void Handle_UnparseableUrl_RaisesBadSyntax(string input)
-        {
-            ProtocolRouter.Handle(input);
-
-            CollectionAssert.AreEqual(new[] { UrlError.BadSyntax }, errors);
-        }
-
-        [TestCase("ckan://select?mod=JNSQ")]
-        [TestCase("ckan://garbage")]
-        public void Handle_UnknownOperation_RaisesUnknownOperation(string input)
-        {
-            ProtocolRouter.Handle(input);
-
-            CollectionAssert.AreEqual(new[] { UrlError.UnknownOperation }, errors);
-        }
-
-        [TestCase("ckan://focus")]
-        [TestCase("ckan://search?q=")]
-        [TestCase("ckan://install?mod=")]
-        public void Handle_MissingValue_RaisesNoValidKeys(string input)
-        {
-            ProtocolRouter.Handle(input);
-
-            CollectionAssert.AreEqual(new[] { UrlError.NoValidKeys }, errors);
         }
     }
 }

@@ -117,6 +117,7 @@ namespace Tests.Core.IO
         {
             var result = Resolve(new[] { Mod("JNSQ", "2:1.0"), Mod("JNSQ", "1:1.0") }, ("JNSQ", "1.0"));
 
+            Assert.AreEqual(InstallOutcome.Ready, result.Outcome);
             Assert.AreEqual("2:1.0", result.Module?.version.ToString());
         }
 
@@ -145,6 +146,16 @@ namespace Tests.Core.IO
             CollectionAssert.AreEqual(
                 new[] { InstallOutcome.Ready, InstallOutcome.Incompatible, InstallOutcome.Unknown, InstallOutcome.PinMissed },
                 results.Select(r => r.Outcome));
+        }
+
+        [Test]
+        public void Resolve_DuplicateIdentifiers_ResolvedOnce()
+        {
+            var results = Resolve(new[] { ("JNSQ", (string?)null), ("JNSQ", null) },
+                                  new[] { Mod("JNSQ", "0.11.0") });
+
+            Assert.AreEqual(1, results.Count);
+            Assert.AreEqual(InstallOutcome.Ready, results[0].Outcome);
         }
 
         private List<ResolvedMod> Resolve((string, string?)[] mods, CkanModule[] available, params CkanModule[] installed)

@@ -91,11 +91,37 @@ namespace Tests.Core.IO
             Assert.AreEqual(accept, plan.Reinstall.Contains(mod));
         }
 
+        [Test]
+        public void Confirm_MixedOutcomes_AsksInOrderAndSplitsThePlan()
+        {
+            var ready = Mod("JNSQ");
+            var incompatible = Mod("RealChute");
+            var installed = Mod("Astrogator");
+
+            // Continue past the unknown mod, take the incompatible one, don't reinstall.
+            var user = User(true, true, false);
+
+            var plan = InstallUrlPrompt.Confirm(
+                Resolved(("JNSQ", ready, InstallOutcome.Ready),
+                         ("NoSuchMod", null, InstallOutcome.Unknown),
+                         ("RealChute", incompatible, InstallOutcome.Incompatible),
+                         ("Astrogator", installed, InstallOutcome.AlreadyInstalled)),
+                user, "KSP", "1.12.5");
+
+            Assert.AreEqual(3, user.RaisedYesNoDialogQuestions.Count);
+            CollectionAssert.AreEqual(new[] { ready, incompatible }, plan.Install);
+            Assert.IsEmpty(plan.Reinstall);
+        }
+
         private static List<ResolvedMod> Resolved(params (string Query, CkanModule? Module, InstallOutcome Outcome)[] mods)
             => mods.Select(m => new ResolvedMod(m.Query, m.Module, m.Outcome)).ToList();
 
-        private static CapturingUser User(bool yesNo)
-            => new CapturingUser(false, _ => yesNo, (_, _) => 0);
+        // Answers the yes/no dialogs in the order they are raised.
+        private static CapturingUser User(params bool[] answers)
+        {
+            int asked = 0;
+            return new CapturingUser(false, _ => answers[asked++], (_, _) => 0);
+        }
 
         private CkanModule Mod(string identifier)
             => gen.GenerateRandomModule(identifier: identifier, version: new ModuleVersion("1.0"));
